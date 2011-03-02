@@ -20,18 +20,27 @@
 %%--------------------------------------------------------------------
 stem(Word) ->
     LowerWord = string:to_lower(Word),
-    R1 = r1(LowerWord),
-    R2 = r1(R1),
-    {ok, R1, R2}.
+    regions(LowerWord).
+
 %%====================================================================
 %% Internal functions
 %%====================================================================
+regions(Word) ->
+    %% Creates the regions R1 and R2 for the stemmer as defined by:
+    %% R1 is the region after the first non-vowel following a vowel,
+    %% or is the null region at the end of the word if there is no 
+    %% such non-vowel.
+    %% R2 is the region after the first non-vowel following a vowel
+    %% in R1, or is the null region at the end of the word if there
+    %% is no such non-vowel.
+    R1 = r1(Word),
+    R2 = r1(R1),
+    {ok, R1, R2}.
 
 r1(Word) ->
     %% R1 is the region after the first non-vowel following a vowel,
     %% or is the null region at the end of the word if there is no 
     %% such non-vowel.
-    %%VC = [is_vowel(X) || X <- Word],
     [H | T] = Word,
     r1(T, H).
 r1([], _Last) ->
