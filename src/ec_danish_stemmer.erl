@@ -41,6 +41,8 @@ regions(Word) ->
     R2 = r1(R1),
     {ok, R1, R2}.
 
+r1([]) ->
+    [];
 r1(Word) ->
     %% R1 is the region after the first non-vowel following a vowel,
     %% or is the null region at the end of the word if there is no 
@@ -59,27 +61,22 @@ r1([H | T], Last) ->
 	    r1(T, H)
     end.
 
-%% R2 is not used by the danish stemmer
-%%r2(_Word) ->
-%%    "".
-
-
-
 is_vowel(Character) ->
     %% Classifies the character as being a vowel or not a vowel 
     %% where not a vowel is a consonant in this context
-    V = lists:member(Character, "aeiouyæøå"),
-    V.
-
+    lists:member(Character, "aeiouyæøå").
 
 %%====================================================================
 %% Testing
 %%====================================================================
 -ifdef(TEST).
 regions_test() ->
-    {ok, R1, R2} = regions("Beautiful"),
-    ?assertEqual("iful", R1),
-    ?assertEqual("ul", R2).
-
+    %% Tests from: http://snowball.tartarus.org/texts/r1r2.html
+    ?assertMatch({ok, "iful", "ul"}, regions("beautiful")),
+    ?assertMatch({ok, "y", []}, regions("beauty")),
+    ?assertMatch({ok, [], []}, regions("beau")),
+    ?assertMatch({ok, "imadversion", "adversion"}, regions("animadversion")),
+    ?assertMatch({ok, "kled", []}, regions("sprinkled")),
+    ?assertMatch({ok, "harist", "ist"}, regions("eucharist")).
 
 -endif.
