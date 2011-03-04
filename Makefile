@@ -1,17 +1,17 @@
 ERL = erl
 ERLC = erlc
 EBIN = ebin
-TESTEBIN = test/ebin
 
 dummy := $(shell test -d $(EBIN) || mkdir -p $(EBIN))
-dummy := $(shell test -d $(TESTEBIN) || mkdir -p $(TESTEBIN))
 
 compile:
-	@$(ERLC) -v -W -o $(EBIN) src/*.erl
-	@$(ERLC) -v -W -pa $(EBIN) -o $(TESTEBIN) test/src/*.erl
+	@$(ERLC) -v -W -DNOTEST -o $(EBIN) src/*.erl
 
-eunit: compile
-	@$(ERL) -noshell -pa $(EBIN) -pa $(TESTEBIN) -eval 'eunit:test("$(TESTEBIN)", [verbose])' -s init stop
+compiletest:
+	@$(ERLC) -v -W -DTEST -o $(EBIN) src/*.erl
+
+eunit: compiletest
+	@$(ERL) -noshell -pa $(EBIN) -pa $(TESTEBIN) -eval 'eunit:test("$(EBIN)", [verbose])' -s init stop
 
 
 console:
@@ -19,4 +19,4 @@ console:
 
 clean:
 	@rm -Rf $(EBIN)/*.beam $(EBIN)/*.app
-	@rm -Rf $(TESTEBIN)/*.beam $(TESTEBIN)/*.app
+

@@ -8,6 +8,10 @@
 %%%-------------------------------------------------------------------
 -module(ec_danish_stemmer).
 
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
+-endif.
+
 %% API
 -export([stem/1]).
 
@@ -67,3 +71,15 @@ is_vowel(Character) ->
     V = lists:member(Character, "aeiouyæøå"),
     V.
 
+
+%%====================================================================
+%% Testing
+%%====================================================================
+-ifdef(TEST).
+regions_test() ->
+    {ok, R1, R2} = regions("Beautiful"),
+    ?assertEqual("iful", R1),
+    ?assertEqual("ul", R2).
+
+
+-endif.
