@@ -27,7 +27,8 @@ stem(Word) ->
     {ok, R1, _R2} = regions(LowerWord), %% R2 unused in danish stemmer
     {ok, S1aLowerWord, S1aR1} = step1a(LowerWord, R1),
     {ok, S1bLowerWord, S1bR1} = step1b(S1aLowerWord, S1aR1),
-    {ok, S2LowerWord, S2R1} = step2(S1bLowerWord, S1bR1).
+    {ok, S2LowerWord, S2R1} = step2(S1bLowerWord, S1bR1),
+    {ok, S3LowerWord, S3R1} = step3(S2LowerWord, S2R1).
 
 %%====================================================================
 %% Internal functions
@@ -154,6 +155,20 @@ step2(Word, R1) ->
     end.
 
 
+step3(Word, R1) ->
+    {ok, WordIgst, R1Igst} = step3igst(Word, R1).
+
+step3igst(Word, R1) ->
+    %% If the R1/word ends igst, remove the final st.
+    EndsIgst = lists:suffix("igst", R1),
+    if
+	EndsIgst == true ->
+	    {ok, removelast(removelast(Word)), removelast(removelast(R1))};
+	true ->
+	    {ok, Word, R1}
+    end.
+    
+
 %%====================================================================
 %% Testing
 %%====================================================================
@@ -199,5 +214,13 @@ step2_test() ->
     ?assertMatch({ok, "goog", "g"}, step2("googd","gd")),
     ?assertMatch({ok, "goog", "g"}, step2("googt","gt")),
     ?assertMatch({ok, "good", "d"}, step2("goodt","dt")).
+
+step3_test() ->
+    ?assertMatch({ok, "goodig", "dig"}, step3("goodigst","digst")).
+
+
+step3igst_test() ->
+    ?assertMatch({ok, "goodigt", "digt"}, step3igst("goodigt","digt")),
+    ?assertMatch({ok, "goodig", "dig"}, step3igst("goodigst","digst")).
 
 -endif.
