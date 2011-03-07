@@ -39,8 +39,9 @@ regions(Word) ->
     %% in R1, or is the null region at the end of the word if there
     %% is no such non-vowel.
     R1 = r1(Word),
-    %% TODO: R1 is adjusted so that the region before it contains 
+    %% R1 is adjusted so that the region before it contains 
     %% at least 3 letters.
+    R1Adjusted = adjustR1(Word, R1),
     R2 = r1(R1),
     {ok, R1, R2}.
 
@@ -67,6 +68,18 @@ r1([H | T], Last) ->
 is_vowel(Character) ->
     %% Classifies the character as being a vowel or not a vowel 
     lists:member(Character, "aeiouyæøå").
+
+adjustR1(Word, R1) ->
+    %% Region before R1 needs to be at least 3 characters
+    WordRegionLength = string:len(Word) - string:len(R1),
+    if
+	(3 =<  WordRegionLength) ->
+	    R1;
+	(3 > WordRegionLength) and (0 < WordRegionLength) ->
+	    string:substr(Word, 4);
+	true ->
+	    Word
+    end.
 
 step1a(Word, R1) ->
     %% Search for the longest among the following suffixes in R1, 
@@ -116,6 +129,11 @@ regions_test() ->
 
 regions_bestemmelse_test() ->
     ?assertMatch({ok, "temmelse", "melse"}, regions("bestemmelse")).
+
+adjustR1_test() ->
+    ?assertEqual("urn", adjustR1("return", "turn")),
+    ?assertEqual("return", adjustR1("return", "return")),
+    ?assertEqual("urn", adjustR1("return", "urn")).
 
 step1a_bestemmelse_test() ->
     Word = "bestemmelse",
