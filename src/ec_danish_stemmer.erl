@@ -156,7 +156,8 @@ step2(Word, R1) ->
 
 
 step3(Word, R1) ->
-    {ok, WordIgst, R1Igst} = step3igst(Word, R1).
+    {ok, WordIgst, R1Igst} = step3igst(Word, R1),
+    {ok, Word3b, R13b} = step3loest(WordIgst, R1Igst).
 
 step3igst(Word, R1) ->
     %% If the R1/word ends igst, remove the final st.
@@ -168,6 +169,16 @@ step3igst(Word, R1) ->
 	    {ok, Word, R1}
     end.
     
+step3loest(Word, R1) ->
+    %% Step 3 b suffix løst replace with løs
+    Endsloest = lists:suffix("løst", R1),
+    if
+	Endsloest == true ->
+	    {ok, removelast(Word), removelast(R1)};
+	true ->
+	    {ok, Word, R1}
+    end.
+
 
 %%====================================================================
 %% Testing
@@ -222,5 +233,10 @@ step3_test() ->
 step3igst_test() ->
     ?assertMatch({ok, "goodigt", "digt"}, step3igst("goodigt","digt")),
     ?assertMatch({ok, "goodig", "dig"}, step3igst("goodigst","digst")).
+
+step3loest_test() ->
+    ?assertMatch({ok, "målløs", "løs"}, step3loest("målløst","løst")),
+    ?assertMatch({ok, "modløs", "løs"}, step3loest("modløs","løs")).
+    
 
 -endif.
