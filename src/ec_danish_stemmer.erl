@@ -28,7 +28,9 @@ stem(Word) ->
     {ok, S1aLowerWord, S1aR1} = step1a(LowerWord, R1),
     {ok, S1bLowerWord, S1bR1} = step1b(S1aLowerWord, S1aR1),
     {ok, S2LowerWord, S2R1} = step2(S1bLowerWord, S1bR1),
-    {ok, S3LowerWord, S3R1} = step3(S2LowerWord, S2R1).
+    {ok, S3LowerWord, S3R1} = step3(S2LowerWord, S2R1),
+    {ok, S4LowerWord, S4R1} = step4(S3LowerWord, S3R1),
+    S4LowerWord.
 
 %%====================================================================
 %% Internal functions
@@ -196,6 +198,21 @@ step3a(Word, R1) ->
 	    {ok, Word, R1}
     end.
 
+step4(Word, R1) ->
+    %% If the word ends with double consonant in R1, 
+    %% remove one of the consonants
+    DoubleConsonant = ["bb", "cc", "dd", "ff", "gg", "hh", "jj", "kk", 
+		       "ll", "mm", "nn", "pp", "qq", "rr", "ss", "tt", 
+		       "vv", "ww", "xx", "zz"],
+    WordLength = string:len(Word),
+    HasDoubleConsonant = lists:any(fun(X) -> lists:suffix(X, R1) end, DoubleConsonant),
+    if
+	(HasDoubleConsonant == true) and (3 < WordLength) ->
+	    {ok, removelast(Word), removelast(R1)};
+	true ->
+	    {ok, Word, R1}
+    end.
+
 
 %%====================================================================
 %% Testing
@@ -263,6 +280,9 @@ step3a_test() ->
     ?assertMatch({ok, "budd", "d"}, step3a("buddtig", "dtig")),
     ?assertMatch({ok, "nomatch", "nomatch"}, step3a("nomatch", "nomatch")).
     
-
+step4_test() ->
+    ?assertMatch({ok, "nodoubledc", "bledc"}, step4("nodoubledc", "bledc")),
+    ?assertMatch({ok, "ncc", "ncc"}, step4("ncc", "ncc")),
+    ?assertMatch({ok, "noc", "noc"}, step4("nocc", "nocc")).
 
 -endif.
