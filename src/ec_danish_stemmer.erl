@@ -157,7 +157,8 @@ step2(Word, R1) ->
 
 step3(Word, R1) ->
     {ok, WordIgst, R1Igst} = step3igst(Word, R1),
-    {ok, Word3b, R13b} = step3loest(WordIgst, R1Igst).
+    {ok, Word3b, R13b} = step3loest(WordIgst, R1Igst),
+    step3a(Word3b, R13b).
 
 step3igst(Word, R1) ->
     %% If the R1/word ends igst, remove the final st.
@@ -176,6 +177,22 @@ step3loest(Word, R1) ->
 	Endsloest == true ->
 	    {ok, removelast(Word), removelast(R1)};
 	true ->
+	    {ok, Word, R1}
+    end.
+
+step3a(Word, R1) ->
+    %% Search for the longest among the following suffixes in R1, 
+    %% and delate and repeat step 2
+    Suffixes = ["elig", "els", "lig", "ig"],
+    case step1asuffix(Suffixes, R1) of
+	{ok, MatchedSuffix} ->
+	    LenMatchSuffix = string:len(MatchedSuffix),
+	    LenWord = string:len(Word),
+	    LenR1 = string:len(R1),
+	    NewWord = string:substr(Word, 1, LenWord - LenMatchSuffix),
+	    NewR1 = string:substr(R1, 1, LenR1 - LenMatchSuffix),
+	    step2(NewWord, NewR1);
+	{nomatch} ->
 	    {ok, Word, R1}
     end.
 
@@ -227,7 +244,7 @@ step2_test() ->
     ?assertMatch({ok, "good", "d"}, step2("goodt","dt")).
 
 step3_test() ->
-    ?assertMatch({ok, "goodig", "dig"}, step3("goodigst","digst")).
+    ?assertMatch({ok, "good", "d"}, step3("goodigst","digst")).
 
 
 step3igst_test() ->
@@ -238,5 +255,14 @@ step3loest_test() ->
     ?assertMatch({ok, "målløs", "løs"}, step3loest("målløst","løst")),
     ?assertMatch({ok, "modløs", "løs"}, step3loest("modløs","løs")).
     
+step3a_test() ->
+    ?assertMatch({ok, "bud", ""}, step3a("budelig", "elig")),
+    ?assertMatch({ok, "buds", "s"}, step3a("budslig", "slig")),
+    ?assertMatch({ok, "bud", ""}, step3a("budels", "els")),
+    ?assertMatch({ok, "bud", ""}, step3a("budig", "ig")),
+    ?assertMatch({ok, "budd", "d"}, step3a("buddtig", "dtig")),
+    ?assertMatch({ok, "nomatch", "nomatch"}, step3a("nomatch", "nomatch")).
+    
+
 
 -endif.
