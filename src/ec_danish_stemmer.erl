@@ -25,7 +25,8 @@
 stem(Word) ->
     LowerWord = string:to_lower(Word),
     {ok, R1, _R2} = regions(LowerWord), %% R2 unused in danish stemmer
-    {ok, NewLowerWord, NewR1} = step1a(LowerWord, R1).
+    {ok, S1aLowerWord, S1aR1} = step1a(LowerWord, R1),
+    {ok, S1bLowerWord, S1bR1} = step1b(S1aLowerWord, S1aR1).
 
 %%====================================================================
 %% Internal functions
@@ -43,7 +44,7 @@ regions(Word) ->
     %% at least 3 letters.
     R1Adjusted = adjustR1(Word, R1),
     R2 = r1(R1),
-    {ok, R1, R2}.
+    {ok, R1Adjusted, R2}.
 
 r1([]) ->
     [];
@@ -114,6 +115,31 @@ step1asuffix([H | T], R1) ->
 	    step1asuffix(T, R1)
     end.
 
+step1b(Word, R1) ->
+    %% Delete trailing S if preceded by a valid s-ending
+    SEndings = ["a", "b", "c", "d", "f", "g", "h", "j", "k", "l", "m",
+	        "n", "o", "p", "r", "t", "v", "y", "z", "å"],
+    IsSuffixS = lists:suffix("s", R1),
+    if
+	IsSuffixS ->
+	    BeforeS = string:substr(Word, string:len(Word) - 1, 1),
+	    ValidSEnding = lists:any(fun(X) -> BeforeS == X end, SEndings),
+	    if
+		ValidSEnding == true ->
+		    {ok, removelast(Word), removelast(R1)};
+		true ->
+		    {ok, Word, R1}
+	    end;
+	true ->
+	    {ok, Word, R1}	    
+    end.
+
+removelast(Word) ->
+    %% Remove last character from word
+    ReverseWord = lists:reverse(Word),
+    [_ | T] = ReverseWord,
+    lists:reverse(T).
+
 %%====================================================================
 %% Testing
 %%====================================================================
@@ -123,7 +149,8 @@ regions_test() ->
     ?assertMatch({ok, "iful", "ul"}, regions("beautiful")),
     ?assertMatch({ok, "y", []}, regions("beauty")),
     ?assertMatch({ok, [], []}, regions("beau")),
-    ?assertMatch({ok, "imadversion", "adversion"}, regions("animadversion")),
+    %% Next one will be hit by the R1 3 char adjust
+    ?assertMatch({ok, "madversion", "adversion"}, regions("animadversion")),
     ?assertMatch({ok, "kled", []}, regions("sprinkled")),
     ?assertMatch({ok, "harist", "ist"}, regions("eucharist")).
 
@@ -142,5 +169,15 @@ step1a_bestemmelse_test() ->
 
 step1a_nomatch_test() ->
     ?assertMatch({ok, "nomatch", "nomatch"}, step1a("nomatch", "nomatch")).
+
+step1b_test() ->
+    ?assertMatch({ok, "ddws", "ddws"}, step1b("ddws","ddws")),
+    ?assertMatch({ok, "ddl", "l"}, step1b("ddls","ls")),
+    ?assertMatch({ok, "bestemmel", "temmel"}, step1b("bestemmels","temmels")).
+
+
+removelast_test() ->
+    ?assertEqual("fis", removelast("fisk")),
+    ?assertEqual("", removelast("k")).
 
 -endif.
