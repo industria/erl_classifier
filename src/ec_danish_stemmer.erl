@@ -26,8 +26,8 @@ stem(Word) ->
     LowerWord = string:to_lower(Word),
     {ok, R1, _R2} = regions(LowerWord), %% R2 unused in danish stemmer
     {ok, S1aLowerWord, S1aR1} = step1a(LowerWord, R1),
-    {ok, S1bLowerWord, S1bR1} = step1b(S1aLowerWord, S1aR1),
-    {ok, S2LowerWord, S2R1} = step2(S1bLowerWord, S1bR1),
+%%    {ok, S1bLowerWord, S1bR1} = step1b(S1aLowerWord, S1aR1),
+    {ok, S2LowerWord, S2R1} = step2(S1aLowerWord, S1aR1),
     {ok, S3LowerWord, S3R1} = step3(S2LowerWord, S2R1),
     {ok, S4LowerWord, S4R1} = step4(S3LowerWord, S3R1),
     S4LowerWord.
@@ -104,7 +104,8 @@ step1a(Word, R1) ->
 	    NewR1 = string:substr(R1, 1, LenR1 - LenMatchSuffix),
 	    {ok, NewWord, NewR1};
 	{nomatch} ->
-	    {ok, Word, R1}
+	    step1b(Word, R1)
+%%	    {ok, Word, R1}
     end.
 
 step1asuffix([], _R1) ->
@@ -218,6 +219,17 @@ step4(Word, R1) ->
 %% Testing
 %%====================================================================
 -ifdef(TEST).
+stem_test() ->
+    ?assertEqual("indtag", stem("indtage")),
+    ?assertEqual("indtag", stem("indtagelse")),
+    ?assertEqual("indtag", stem("indtager")),
+    ?assertEqual("indtag", stem("indtages")),
+    ?assertEqual("indtag", stem("indtaget")),
+    ?assertEqual("indtil", stem("indtil")),
+    ?assertEqual("indtog", stem("indtog")),
+    ?assertEqual("indtraf", stem("indtraf")),
+    ?assertEqual("indtryk", stem("indtryk")).
+
 regions_test() ->
     %% Tests from: http://snowball.tartarus.org/texts/r1r2.html
     ?assertMatch({ok, "iful", "ul"}, regions("beautiful")),
