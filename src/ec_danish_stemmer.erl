@@ -26,7 +26,8 @@ stem(Word) ->
     LowerWord = string:to_lower(Word),
     {ok, R1, _R2} = regions(LowerWord), %% R2 unused in danish stemmer
     {ok, S1aLowerWord, S1aR1} = step1a(LowerWord, R1),
-    {ok, S1bLowerWord, S1bR1} = step1b(S1aLowerWord, S1aR1).
+    {ok, S1bLowerWord, S1bR1} = step1b(S1aLowerWord, S1aR1),
+    {ok, S2LowerWord, S2R1} = step2(S1bLowerWord, S1bR1).
 
 %%====================================================================
 %% Internal functions
@@ -140,6 +141,19 @@ removelast(Word) ->
     [_ | T] = ReverseWord,
     lists:reverse(T).
 
+step2(Word, R1) ->
+    %% Search for one of (gd, dt, gt, kt) suffixes in R1, and if found
+    %% delete the last letter
+    Suffixes = ["gd", "dt", "gt", "kt"],
+    IsSuffixFound = lists:any(fun(X) -> lists:suffix(X, R1) end, Suffixes),
+    if
+	IsSuffixFound == true ->
+	    {ok, removelast(Word), removelast(R1)};
+	true ->
+	    {ok, Word, R1}
+    end.
+
+
 %%====================================================================
 %% Testing
 %%====================================================================
@@ -175,9 +189,15 @@ step1b_test() ->
     ?assertMatch({ok, "ddl", "l"}, step1b("ddls","ls")),
     ?assertMatch({ok, "bestemmel", "temmel"}, step1b("bestemmels","temmels")).
 
-
 removelast_test() ->
     ?assertEqual("fis", removelast("fisk")),
     ?assertEqual("", removelast("k")).
+
+step2_test() ->
+    ?assertMatch({ok, "frisk", "frisk"}, step2("friskt","friskt")),
+    ?assertMatch({ok, "frisk", "sk"}, step2("frisk","sk")),
+    ?assertMatch({ok, "goog", "g"}, step2("googd","gd")),
+    ?assertMatch({ok, "goog", "g"}, step2("googt","gt")),
+    ?assertMatch({ok, "good", "d"}, step2("goodt","dt")).
 
 -endif.
