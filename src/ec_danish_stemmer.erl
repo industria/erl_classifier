@@ -20,16 +20,16 @@
 %%====================================================================
 %%--------------------------------------------------------------------
 %% Function: stem
-%% Description: Stems a word using the Danish Snowball stemmer.
+%% Description: Stem a word using the Danish Snowball stemmer.
 %%--------------------------------------------------------------------
 stem(Word) ->
-    LowerWord = string:to_lower(Word),
-    {ok, R1, _R2} = regions(LowerWord), %% R2 unused in danish stemmer
-    {ok, S1aLowerWord, S1aR1} = step1a(LowerWord, R1),
-    {ok, S2LowerWord, S2R1} = step2(S1aLowerWord, S1aR1),
-    {ok, S3LowerWord, S3R1} = step3(S2LowerWord, S2R1),
-    {ok, S4LowerWord, _S4R1} = step4(S3LowerWord, S3R1),
-    S4LowerWord.
+    LWord = string:to_lower(Word),
+    {ok, R1, _} = regions(LWord),
+    {ok, S1Word, R1AfterStep1} = step1a(LWord, R1),
+    {ok, S2Word, R1AfterStep2} = step2(S1Word, R1AfterStep1),
+    {ok, S3Word, R1AfterStep3} = step3(S2Word, R1AfterStep2),
+    {ok, Stem, _} = step4(S3Word, R1AfterStep3),
+    Stem.
 
 %%====================================================================
 %% Internal functions
@@ -46,8 +46,9 @@ regions(Word) ->
     %% R1 is adjusted so that the region before it contains 
     %% at least 3 letters.
     R1Adjusted = adjustR1(Word, R1),
-    R2 = r1(R1),
-    {ok, R1Adjusted, R2}.
+    %% R2 is not used by the Danish stemmer, so it's not calculated
+    %% To calculate it do r1(R1)
+    {ok, R1Adjusted, []}.
 
 r1([]) ->
     [];
@@ -303,16 +304,17 @@ stem_test() ->
 
 regions_test() ->
     %% Tests from: http://snowball.tartarus.org/texts/r1r2.html
-    ?assertMatch({ok, "iful", "ul"}, regions("beautiful")),
+    %% Note for Danish stemmer R2 is always an empty list
+    ?assertMatch({ok, "iful", []}, regions("beautiful")),
     ?assertMatch({ok, "y", []}, regions("beauty")),
     ?assertMatch({ok, [], []}, regions("beau")),
     %% Next one will be hit by the R1 3 char adjust
-    ?assertMatch({ok, "madversion", "adversion"}, regions("animadversion")),
+    ?assertMatch({ok, "madversion", []}, regions("animadversion")),
     ?assertMatch({ok, "kled", []}, regions("sprinkled")),
-    ?assertMatch({ok, "harist", "ist"}, regions("eucharist")).
+    ?assertMatch({ok, "harist", []}, regions("eucharist")).
 
 regions_bestemmelse_test() ->
-    ?assertMatch({ok, "temmelse", "melse"}, regions("bestemmelse")).
+    ?assertMatch({ok, "temmelse", []}, regions("bestemmelse")).
 
 adjustR1_test() ->
     ?assertEqual("urn", adjustR1("return", "turn")),
