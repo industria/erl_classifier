@@ -28,7 +28,7 @@ stem(Word) ->
     {ok, S1aLowerWord, S1aR1} = step1a(LowerWord, R1),
     {ok, S2LowerWord, S2R1} = step2(S1aLowerWord, S1aR1),
     {ok, S3LowerWord, S3R1} = step3(S2LowerWord, S2R1),
-    {ok, S4LowerWord, S4R1} = step4(S3LowerWord, S3R1),
+    {ok, S4LowerWord, _S4R1} = step4(S3LowerWord, S3R1),
     S4LowerWord.
 
 %%====================================================================
@@ -65,7 +65,7 @@ r1([H | T], Last) ->
     if
 	(PrevVowel == true) and (CurrVowel == false) ->
 	    T;
-	true -> %% else
+	true ->
 	    r1(T, H)
     end.
 
@@ -94,37 +94,20 @@ step1a(Word, R1) ->
 		   "erer", "eres", "eret", "heds", "ene", "ens",
 		   "ere", "ers", "ets", "hed", "en", "er", "es",
 		   "et", "e"],
-    case step1asuffix(Step1suffix, R1) of
+    case matchsuffix(Step1suffix, R1) of
 	{ok, MatchedSuffix} ->
-	    LenMatchSuffix = string:len(MatchedSuffix),
-	    LenWord = string:len(Word),
-	    LenR1 = string:len(R1),
-	    NewWord = string:substr(Word, 1, LenWord - LenMatchSuffix),
-	    NewR1 = string:substr(R1, 1, LenR1 - LenMatchSuffix),
-	    {ok, NewWord, NewR1};
+	    removesuffix(Word, R1, MatchedSuffix);
 	{nomatch} ->
 	    step1b(Word, R1)
     end.
 
-step1asuffix([], _R1) ->
-    {nomatch};
-
-step1asuffix([H | T], R1) ->
-    Match = lists:suffix(H, R1),
-    if
-	Match == true -> 
-	    {ok, H};
-	true ->
-	    step1asuffix(T, R1)
-    end.
-
 step1b(Word, R1) ->
     %% Delete trailing S if preceded by a valid s-ending
-    SEndings = ["a", "b", "c", "d", "f", "g", "h", "j", "k", "l", "m",
-	        "n", "o", "p", "r", "t", "v", "y", "z", "\x{E5}"],
     IsSuffixS = lists:suffix("s", R1),
     if
 	IsSuffixS ->
+	    SEndings = ["a", "b", "c", "d", "f", "g", "h", "j", "k", "l", "m",
+			"n", "o", "p", "r", "t", "v", "y", "z", "\x{E5}"],
 	    BeforeS = string:substr(Word, string:len(Word) - 1, 1),
 	    ValidSEnding = lists:any(fun(X) -> BeforeS == X end, SEndings),
 	    if
@@ -185,13 +168,9 @@ step3a(Word, R1) ->
     %% Search for the longest among the following suffixes in R1, 
     %% and delate and repeat step 2
     Suffixes = ["elig", "els", "lig", "ig"],
-    case step1asuffix(Suffixes, R1) of
+    case matchsuffix(Suffixes, R1) of
 	{ok, MatchedSuffix} ->
-	    LenMatchSuffix = string:len(MatchedSuffix),
-	    LenWord = string:len(Word),
-	    LenR1 = string:len(R1),
-	    NewWord = string:substr(Word, 1, LenWord - LenMatchSuffix),
-	    NewR1 = string:substr(R1, 1, LenR1 - LenMatchSuffix),
+	    {ok, NewWord, NewR1} = removesuffix(Word, R1, MatchedSuffix),
 	    step2(NewWord, NewR1);
 	{nomatch} ->
 	    {ok, Word, R1}
@@ -212,6 +191,27 @@ step4(Word, R1) ->
 	    {ok, Word, R1}
     end.
 
+
+matchsuffix([], _R1) ->
+    {nomatch};
+
+matchsuffix([H | T], R1) ->
+    Match = lists:suffix(H, R1),
+    if
+	Match == true -> 
+	    {ok, H};
+	true ->
+	    matchsuffix(T, R1)
+    end.
+
+removesuffix(Word, R1, Suffix) ->
+    %% Remove the Suffix from Word and R1
+    LenSuffix = string:len(Suffix),
+    LenWord = string:len(Word),
+    LenR1 = string:len(R1),
+    NewWord = string:substr(Word, 1, LenWord - LenSuffix),
+    NewR1 = string:substr(R1, 1, LenR1 - LenSuffix),
+    {ok, NewWord, NewR1}.
 
 %%====================================================================
 %% Testing
@@ -381,5 +381,8 @@ is_vowel_test() ->
     ?assertNot(is_vowel($x)),
     ?assertNot(is_vowel($b)).
 
+removesuffix_test() ->
+    ?assertMatch({ok, "fisk", "k"}, removesuffix("fiskdel", "kdel", "del")).
+    
 
 -endif.
