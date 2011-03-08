@@ -26,7 +26,6 @@ stem(Word) ->
     LowerWord = string:to_lower(Word),
     {ok, R1, _R2} = regions(LowerWord), %% R2 unused in danish stemmer
     {ok, S1aLowerWord, S1aR1} = step1a(LowerWord, R1),
-%%    {ok, S1bLowerWord, S1bR1} = step1b(S1aLowerWord, S1aR1),
     {ok, S2LowerWord, S2R1} = step2(S1aLowerWord, S1aR1),
     {ok, S3LowerWord, S3R1} = step3(S2LowerWord, S2R1),
     {ok, S4LowerWord, S4R1} = step4(S3LowerWord, S3R1),
@@ -72,7 +71,7 @@ r1([H | T], Last) ->
 
 is_vowel(Character) ->
     %% Classifies the character as being a vowel or not a vowel 
-    lists:member(Character, "aeiouyæøå").
+    lists:member(Character, "aeiouy\x{E6}\x{F8}\x{E5}").
 
 adjustR1(Word, R1) ->
     %% Region before R1 needs to be at least 3 characters
@@ -105,7 +104,6 @@ step1a(Word, R1) ->
 	    {ok, NewWord, NewR1};
 	{nomatch} ->
 	    step1b(Word, R1)
-%%	    {ok, Word, R1}
     end.
 
 step1asuffix([], _R1) ->
@@ -123,7 +121,7 @@ step1asuffix([H | T], R1) ->
 step1b(Word, R1) ->
     %% Delete trailing S if preceded by a valid s-ending
     SEndings = ["a", "b", "c", "d", "f", "g", "h", "j", "k", "l", "m",
-	        "n", "o", "p", "r", "t", "v", "y", "z", "å"],
+	        "n", "o", "p", "r", "t", "v", "y", "z", "\x{E5}"],
     IsSuffixS = lists:suffix("s", R1),
     if
 	IsSuffixS ->
@@ -175,7 +173,7 @@ step3igst(Word, R1) ->
     
 step3loest(Word, R1) ->
     %% Step 3 b suffix løst replace with løs
-    Endsloest = lists:suffix("løst", R1),
+    Endsloest = lists:suffix("l\x{F8}st", R1),
     if
 	Endsloest == true ->
 	    {ok, removelast(Word), removelast(R1)};
@@ -220,6 +218,8 @@ step4(Word, R1) ->
 %%====================================================================
 -ifdef(TEST).
 stem_test() ->
+    %% Run through all examples from 
+    %% http://snowball.tartarus.org/algorithms/danish/stemmer.html
     ?assertEqual("indtag", stem("indtage")),
     ?assertEqual("indtag", stem("indtagelse")),
     ?assertEqual("indtag", stem("indtager")),
@@ -228,7 +228,78 @@ stem_test() ->
     ?assertEqual("indtil", stem("indtil")),
     ?assertEqual("indtog", stem("indtog")),
     ?assertEqual("indtraf", stem("indtraf")),
-    ?assertEqual("indtryk", stem("indtryk")).
+    ?assertEqual("indtryk", stem("indtryk")),
+    ?assertEqual("indtr\x{E6}d", stem("indtr\x{E6}de")),
+    ?assertEqual("indtr\x{E6}d", stem("indtr\x{E6}der")),
+    ?assertEqual("indtr\x{E6}f", stem("indtr\x{E6}ffe")),
+    ?assertEqual("indtr\x{E6}f", stem("indtr\x{E6}ffer")),
+    ?assertEqual("indtr\x{E6}ng", stem("indtr\x{E6}ngende")),
+    ?assertEqual("indt\x{E6}g", stem("indt\x{E6}gt")),
+    ?assertEqual("indt\x{E6}g", stem("indt\x{E6}gter")),
+    ?assertEqual("indvandred", stem("indvandrede")),
+    ?assertEqual("indvandr", stem("indvandret")),
+    ?assertEqual("indvend", stem("indvender")),
+    ?assertEqual("indvend", stem("indvendig")),
+    ?assertEqual("indvend", stem("indvendige")),
+    ?assertEqual("indvend", stem("indvendigt")),
+    ?assertEqual("indvending", stem("indvending")),
+    ?assertEqual("indvending", stem("indvendingerne")),
+    ?assertEqual("indvi", stem("indvie")),
+    ?assertEqual("indvied", stem("indviede")),
+    ?assertEqual("indvi", stem("indvielse")),
+    ?assertEqual("indvi", stem("indvielsen")),
+    ?assertEqual("indvielsesl\x{F8}ft", stem("indvielsesl\x{F8}fte")),
+    ?assertEqual("indvielsestid", stem("indvielsestid")),
+    ?assertEqual("indvi", stem("indvier")),
+    ?assertEqual("indvi", stem("indvies")),
+    ?assertEqual("indvi", stem("indviet")),
+    ?assertEqual("indvikl", stem("indvikle")),
+    ?assertEqual("indvikl", stem("indvikler")),
+    ?assertEqual("indvold", stem("indvolde")),
+    ?assertEqual("indvold", stem("indvoldene")),
+    ?assertEqual("indvort", stem("indvortes")),
+    ?assertEqual("ind\x{E5}nd", stem("ind\x{E5}nde")),
+    ?assertEqual("ind\x{E5}nded", stem("ind\x{E5}ndede")),
+    ?assertEqual("underst", stem("underste")),
+    ?assertEqual("unders\x{E5}t", stem("unders\x{E5}tter")),
+    ?assertEqual("unders\x{E5}t", stem("unders\x{E5}tters")),
+    ?assertEqual("unders\x{F8}g", stem("unders\x{F8}g")),
+    ?assertEqual("unders\x{F8}g", stem("unders\x{F8}ge")),
+    ?assertEqual("unders\x{F8}g", stem("unders\x{F8}gelse")),
+    ?assertEqual("unders\x{F8}g", stem("unders\x{F8}gelsen")),
+    ?assertEqual("unders\x{F8}g", stem("unders\x{F8}ger")),
+    ?assertEqual("unders\x{F8}g", stem("unders\x{F8}gt")),
+    ?assertEqual("unders\x{F8}g", stem("unders\x{F8}gte")),
+    ?assertEqual("undertryk", stem("undertryk")),
+    ?assertEqual("undertryk", stem("undertrykke")),
+    ?assertEqual("undertryk", stem("undertrykkelse")),
+    ?assertEqual("undertryk", stem("undertrykker")),
+    ?assertEqual("undertryk", stem("undertrykkere")),
+    ?assertEqual("undertryk", stem("undertrykkeren")),
+    ?assertEqual("undertryk", stem("undertrykkerens")),
+    ?assertEqual("undertryk", stem("undertrykkeres")),
+    ?assertEqual("undertryk", stem("undertrykkes")),
+    ?assertEqual("undertryk", stem("undertrykt")),
+    ?assertEqual("undertryk", stem("undertrykte")),
+    ?assertEqual("undertryk", stem("undertryktes")),
+    ?assertEqual("undertvang", stem("undertvang")),
+    ?assertEqual("undertvung", stem("undertvunget")),
+    ?assertEqual("undertvungn", stem("undertvungne")),
+    ?assertEqual("undervej", stem("undervejs")),
+    ?assertEqual("underverden", stem("underverdenen")),
+    ?assertEqual("undervis", stem("undervise")),
+    ?assertEqual("undervis", stem("underviser")),
+    ?assertEqual("undervis", stem("undervises")),
+    ?assertEqual("undervisning", stem("undervisning")),
+    ?assertEqual("undervisning", stem("undervisningen")),
+    ?assertEqual("undervist", stem("undervist")),
+    ?assertEqual("undervist", stem("underviste")),
+    ?assertEqual("underv\x{E6}rk", stem("underv\x{E6}rk")),
+    ?assertEqual("underv\x{E6}rk", stem("underv\x{E6}rker")),
+    ?assertEqual("undevis", stem("undevise")),
+    ?assertEqual("undevist", stem("undeviste")),
+    ?assertEqual("undfang", stem("undfange")),
+    ?assertEqual("undfanged", stem("undfanged")).
 
 regions_test() ->
     %% Tests from: http://snowball.tartarus.org/texts/r1r2.html
@@ -281,8 +352,8 @@ step3igst_test() ->
     ?assertMatch({ok, "goodig", "dig"}, step3igst("goodigst","digst")).
 
 step3loest_test() ->
-    ?assertMatch({ok, "målløs", "løs"}, step3loest("målløst","løst")),
-    ?assertMatch({ok, "modløs", "løs"}, step3loest("modløs","løs")).
+    ?assertMatch({ok, "m\x{E5}ll\x{F8}s", "l\x{F8}s"}, step3loest("m\x{E5}ll\x{F8}st","l\x{F8}st")),
+    ?assertMatch({ok, "modl\x{F8}s", "l\x{F8}s"}, step3loest("modl\x{F8}s","l\x{F8}s")).
     
 step3a_test() ->
     ?assertMatch({ok, "bud", ""}, step3a("budelig", "elig")),
@@ -296,5 +367,19 @@ step4_test() ->
     ?assertMatch({ok, "nodoubledc", "bledc"}, step4("nodoubledc", "bledc")),
     ?assertMatch({ok, "ncc", "ncc"}, step4("ncc", "ncc")),
     ?assertMatch({ok, "noc", "noc"}, step4("nocc", "nocc")).
+
+is_vowel_test() ->
+    ?assert(is_vowel($a)),
+    ?assert(is_vowel($e)),
+    ?assert(is_vowel($i)),
+    ?assert(is_vowel($o)),
+    ?assert(is_vowel($u)),
+    ?assert(is_vowel($y)),
+    ?assert(is_vowel(16#E6)),
+    ?assert(is_vowel(16#F8)),
+    ?assert(is_vowel(16#E5)),
+    ?assertNot(is_vowel($x)),
+    ?assertNot(is_vowel($b)).
+
 
 -endif.
