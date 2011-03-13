@@ -18,7 +18,7 @@
 %% API
 %%====================================================================
 %%--------------------------------------------------------------------
-%% Function: remove_punctuation
+%% Function: remove_punctuation(Document) -> Document
 %% Description: Remove the punctuation from the input Document
 %% Punctuation is defined as: !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
 %%--------------------------------------------------------------------

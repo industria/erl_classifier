@@ -11,7 +11,7 @@ compiletest:
 	@$(ERLC) -v -W -DTEST -o $(EBIN) src/*.erl
 
 eunit: compiletest
-	@$(ERL) -noshell -pa $(EBIN) -pa $(TESTEBIN) -eval 'eunit:test("$(EBIN)", [verbose])' -s init stop
+	@$(ERL) -noshell -pa $(EBIN) -eval 'eunit:test("$(EBIN)", [verbose])' -s init stop
 
 
 console:
