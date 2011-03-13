@@ -64,7 +64,7 @@ r1([H | T], Last) ->
     PrevVowel = is_vowel(Last),
     CurrVowel = is_vowel(H),
     if
-	(PrevVowel == true) and (CurrVowel == false) ->
+	(PrevVowel =:= true) and (CurrVowel =:= false) ->
 	    T;
 	true ->
 	    r1(T, H)
@@ -110,9 +110,9 @@ step1b(Word, R1) ->
 	    SEndings = ["a", "b", "c", "d", "f", "g", "h", "j", "k", "l", "m",
 			"n", "o", "p", "r", "t", "v", "y", "z", "\x{E5}"],
 	    BeforeS = string:substr(Word, string:len(Word) - 1, 1),
-	    ValidSEnding = lists:any(fun(X) -> BeforeS == X end, SEndings),
+	    ValidSEnding = lists:any(fun(X) -> BeforeS =:= X end, SEndings),
 	    if
-		ValidSEnding == true ->
+		ValidSEnding =:= true ->
 		    {ok, removelast(Word), removelast(R1)};
 		true ->
 		    {ok, Word, R1}
@@ -133,7 +133,7 @@ step2(Word, R1) ->
     Suffixes = ["gd", "dt", "gt", "kt"],
     IsSuffixFound = lists:any(fun(X) -> lists:suffix(X, R1) end, Suffixes),
     if
-	IsSuffixFound == true ->
+	IsSuffixFound =:= true ->
 	    {ok, removelast(Word), removelast(R1)};
 	true ->
 	    {ok, Word, R1}
@@ -149,7 +149,7 @@ step3igst(Word, R1) ->
     %% If the R1/word ends igst, remove the final st.
     EndsIgst = lists:suffix("igst", R1),
     if
-	EndsIgst == true ->
+	EndsIgst =:= true ->
 	    {ok, removelast(removelast(Word)), removelast(removelast(R1))};
 	true ->
 	    {ok, Word, R1}
@@ -159,7 +159,7 @@ step3loest(Word, R1) ->
     %% Step 3 b suffix løst replace with løs
     Endsloest = lists:suffix("l\x{F8}st", R1),
     if
-	Endsloest == true ->
+	Endsloest =:= true ->
 	    {ok, removelast(Word), removelast(R1)};
 	true ->
 	    {ok, Word, R1}
@@ -186,7 +186,7 @@ step4(Word, R1) ->
     WordLength = string:len(Word),
     HasDoubleConsonant = lists:any(fun(X) -> lists:suffix(X, R1) end, DoubleConsonant),
     if
-	(HasDoubleConsonant == true) and (3 < WordLength) ->
+	(HasDoubleConsonant =:= true) and (3 < WordLength) ->
 	    {ok, removelast(Word), removelast(R1)};
 	true ->
 	    {ok, Word, R1}
@@ -199,7 +199,7 @@ matchsuffix([], _R1) ->
 matchsuffix([H | T], R1) ->
     Match = lists:suffix(H, R1),
     if
-	Match == true -> 
+	Match =:= true -> 
 	    {ok, H};
 	true ->
 	    matchsuffix(T, R1)
