@@ -12,7 +12,7 @@
 -endif.
 
 %% API
--export([remove_punctuation/1, normalize_whitespace/1]).
+-export([remove_punctuation/1, normalize_whitespace/1, to_lowercase/1]).
 
 %%====================================================================
 %% API
@@ -32,7 +32,12 @@ remove_punctuation(Document) when is_binary(Document) ->
 normalize_whitespace(Document) when is_binary(Document) ->
     << <<(normalize_whitespace_character(X))>> || <<X>> <= Document >>.
 
-    
+%%--------------------------------------------------------------------
+%% Function: to_lowercase(Document) -> Document
+%% Description: Changes the document to lowercase.
+%%--------------------------------------------------------------------
+to_lowercase(Document) when is_binary(Document) ->    
+    << <<(string:to_lower(X))/utf8>> || <<X/utf8>> <= Document >>.
 %%====================================================================
 %% Internal functions
 %%====================================================================
@@ -75,5 +80,8 @@ is_whitespace_control_test() ->
     ?assert(is_whitespace_control(<<"\t"/utf8>>)),
     ?assertNot(is_whitespace_control(<<" "/utf8>>)),
     ?assertNot(is_whitespace_control(<<"g"/utf8>>)).
+
+to_lowercase_test() ->
+    ?assertEqual(<<"\x{E6}bler"/utf8>>, to_lowercase(<<"\x{C6}bler"/utf8>>)).
 
 -endif.
