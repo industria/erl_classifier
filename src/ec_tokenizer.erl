@@ -73,5 +73,18 @@ word_tokenize_extra_spc_end_test() ->
     ETerms = [<<"This"/utf8>>, <<"is"/utf8>>, <<"a"/utf8>>,
 	      <<"list"/utf8>>, <<"of"/utf8>>, <<"terms"/utf8>>],
     ?assertEqual(ETerms, lists:reverse(Terms)).
+
+
+word_tokenize_polsport_test() ->
+    {ok, Document} = file:read_file("test/documents/polsport.txt"),
+    {ok, Words} = file:read_file("test/documents/polsport_words.txt"),
+    WordListSplit = re:split(Words, "\n"),
+    WordList = [ X || X <- WordListSplit, 0 < byte_size(X)],
+    NoPunctuation = ec_document_processing:remove_punctuation(Document),
+    Normalized = ec_document_processing:normalize_whitespace(NoPunctuation),
+    Terms = word_tokenize(Normalized),
+    WordsSorted = lists:sort(WordList),
+    TermsSorted = lists:sort(Terms),
+    ?assertEqual(WordsSorted, TermsSorted).
     
 -endif.

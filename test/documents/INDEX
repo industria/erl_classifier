@@ -1,0 +1,4 @@
+# Contains index of test files:
+
+polsport.txt : Danish, article from politiken.dk sport
+polsport_words.txt : The polsport.txt file split to one word per line.

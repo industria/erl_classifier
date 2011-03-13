@@ -12,7 +12,7 @@
 -endif.
 
 %% API
--export([remove_punctuation/1]).
+-export([remove_punctuation/1, normalize_whitespace/1]).
 
 %%====================================================================
 %% API
@@ -23,20 +23,30 @@
 %% Punctuation is defined as: !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
 %%--------------------------------------------------------------------
 remove_punctuation(Document) when is_binary(Document) ->
-    << <<X>> || <<X>> <= Document, include_character(<<X>>) >>.
+    << <<X>> || <<X>> <= Document, not punctuation(<<X>>) >>.
+
+%%--------------------------------------------------------------------
+%% Function: normalize_whitespace(Document) -> Document
+%% Description: Changes whitespace control characters to a space
+%%--------------------------------------------------------------------
+normalize_whitespace(Document) when is_binary(Document) ->
+    << <<(normalize_whitespace_character(X))>> || <<X>> <= Document >>.
+
     
 %%====================================================================
 %% Internal functions
 %%====================================================================
-include_character(X) ->
-    not (is_punctuation(X) orelse is_whitespace_control(X)).
-
-is_punctuation(X) ->
+punctuation(X) when is_binary(X)->
     %% Punctuation defined as  !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
     ((<<16#21>> =< X andalso X =< <<16#2F>>) orelse
      (<<16#3A>> =< X andalso X =< <<16#40>>) orelse
      (<<16#5B>> =< X andalso X =< <<16#60>>) orelse
      (<<16#7B>> =< X andalso X =< <<16#7E>>)).
+
+normalize_whitespace_character(X) when (16#09 =< X andalso X =< 16#0D) ->
+    16#20;
+normalize_whitespace_character(X) ->
+    X.
 
 is_whitespace_control(X) ->    
     %% Whitespace control characters not including space
@@ -52,15 +62,14 @@ remove_punctuation_test() ->
     Expected = <<"Remove the punctuation"/utf8>>,
     ?assertEqual(Expected, remove_punctuation(Doc)).
 
-include_character_test() ->
-    ?assert(include_character(<< "\x{C6}"/utf8 >>)),
-    ?assert(include_character(<< "\X{20}"/utf8 >>)),
-    ?assertNot(include_character(<< "\x{0D}"/utf8 >>)).
+normalize_whitespace_test() ->
+    Document = <<"fish \tcat\n"/utf8>>,
+    Normalized = normalize_whitespace(Document),
+    ?assertEqual(<<"fish  cat "/utf8>>, Normalized).
 
-
-is_punctuation_test() ->
-    ?assert(is_punctuation(<<"!"/utf8>>)),
-    ?assertNot(is_punctuation(<<"a"/utf8>>)).
+punctuation_test() ->
+    ?assert(punctuation(<<"!"/utf8>>)),
+    ?assertNot(punctuation(<<"a"/utf8>>)).
 
 is_whitespace_control_test() ->
     ?assert(is_whitespace_control(<<"\t"/utf8>>)),
