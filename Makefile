@@ -4,11 +4,14 @@ EBIN = ebin
 
 dummy := $(shell test -d $(EBIN) || mkdir -p $(EBIN))
 
-compile:
+compile: appfile
 	@$(ERLC) -v -W -DNOTEST -o $(EBIN) src/*.erl
 
-compiletest:
+compiletest: appfile
 	@$(ERLC) -v -W -DTEST -o $(EBIN) src/*.erl
+
+appfile:
+	@cp src/erl_classifier.app $(EBIN)
 
 eunit: compiletest
 	@$(ERL) -noshell -pa $(EBIN) -eval 'eunit:test("$(EBIN)", [verbose])' -s init stop
