@@ -40,9 +40,11 @@ start_link() ->
 %% specifications.
 %%--------------------------------------------------------------------
 init([]) ->
-    AChild = {'AName',{'AModule',start_link,[]},
-	      permanent,2000,worker,['AModule']},
-    {ok,{{one_for_all,0,1}, [AChild]}}.
+    TrainerServer = {ec_trainer,{ec_trainer, start_link, []},
+		     permanent, 2000, worker, [ec_trainer]},
+    Children = [TrainerServer],
+    RestartStrategy = {one_for_one, 0, 1},
+    {ok, { RestartStrategy, Children} }.
 
 %%====================================================================
 %% Internal functions
