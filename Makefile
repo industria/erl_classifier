@@ -17,9 +17,8 @@ eunit: compiletest
 	@$(ERL) -noshell -pa $(EBIN) -eval 'eunit:test("$(EBIN)", [verbose])' -s init stop
 
 
-console:
+console: compile
 	@$(ERL) -pa $(EBIN)
 
 clean:
 	@rm -Rf $(EBIN)/*.beam $(EBIN)/*.app
-

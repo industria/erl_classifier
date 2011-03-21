@@ -27,9 +27,10 @@
 features(danish, Document) when is_binary(Document) ->
     DP = ec_document_processing:remove_punctuation(Document),
     DN = ec_document_processing:normalize_whitespace(DP),
-    Terms = ec_tokenizer:word_tokenize(DN),
-    FD = ec_frequency_distribution:create(Terms),
-    FD.
+    Low = ec_document_processing:to_lowercase(DN),
+    Terms = ec_tokenizer:word_tokenize(Low),
+    StemmedTerms = [ ec_danish_stemmer:stem(Term) || Term <- Terms],
+    ec_frequency_distribution:create(StemmedTerms).
 
 %%====================================================================
 %% Internal functions
@@ -47,21 +48,10 @@ features_swedish_test() ->
 
 features_danish_test() ->
     {ok, Document} = file:read_file("test/documents/polsport.txt"),
-    FD = features(danish, Document).
-%%    SFD = lists:keysort(1, FD),
-%%    ?assertEqual([], SFD).
+    FD = features(danish, Document),
+    ?assertMatch({_, 2}, lists:keyfind(<<"bold"/utf8>>, 1, FD)),
+    ?assertMatch({_, 3}, lists:keyfind(<<"kik"/utf8>>, 1, FD)),
+    ?assertMatch({_, 2}, lists:keyfind(<<"selvtillid"/utf8>>, 1, FD)),
+    ?assertMatch({_, 2}, lists:keyfind(<<"fejlaflevering"/utf8>>, 1, FD)).
 
-
-%% features_danish_test() ->
-%%     {ok, Document} = file:read_file("test/documents/polsport.txt"),
-%%     {ok, Words} = file:read_file("test/documents/polsport_words.txt"),
-%%     WordListSplit = re:split(Words, "\n"),
-%%     WordList = [ X || X <- WordListSplit, 0 < byte_size(X)],
-%%     NoPunctuation = ec_document_processing:remove_punctuation(Document),
-%%     Normalized = ec_document_processing:normalize_whitespace(NoPunctuation),
-%%     Terms = word_tokenize(Normalized),
-%%     WordsSorted = lists:sort(WordList),
-%%     TermsSorted = lists:sort(Terms),
-%%     ?assertEqual(WordsSorted, TermsSorted).
-%%     ?assert(false).
 -endif.

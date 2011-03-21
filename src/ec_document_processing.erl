@@ -53,10 +53,6 @@ normalize_whitespace_character(X) when (16#09 =< X andalso X =< 16#0D) ->
 normalize_whitespace_character(X) ->
     X.
 
-is_whitespace_control(X) ->    
-    %% Whitespace control characters not including space
-    (<<16#09>> =< X andalso X =< <<16#0D>>).
-
 %%====================================================================
 %% Testing
 %%====================================================================
@@ -75,11 +71,6 @@ normalize_whitespace_test() ->
 punctuation_test() ->
     ?assert(punctuation(<<"!"/utf8>>)),
     ?assertNot(punctuation(<<"a"/utf8>>)).
-
-is_whitespace_control_test() ->
-    ?assert(is_whitespace_control(<<"\t"/utf8>>)),
-    ?assertNot(is_whitespace_control(<<" "/utf8>>)),
-    ?assertNot(is_whitespace_control(<<"g"/utf8>>)).
 
 to_lowercase_test() ->
     ?assertEqual(<<"\x{E6}bler"/utf8>>, to_lowercase(<<"\x{C6}bler"/utf8>>)).

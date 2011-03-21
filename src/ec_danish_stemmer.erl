@@ -22,14 +22,20 @@
 %% Function: stem
 %% Description: Stem a word using the Danish Snowball stemmer.
 %%--------------------------------------------------------------------
-stem(Word) ->
+stem(Word) when is_binary(Word) ->
+    W = [ X || <<X/utf8>> <= Word],
+    Stem = stem(W),
+    unicode:characters_to_binary(Stem, utf8, utf8);
+stem(Word) when length(Word) > 3 ->
     LWord = string:to_lower(Word),
     {ok, R1, _} = regions(LWord),
     {ok, S1Word, R1AfterStep1} = step1a(LWord, R1),
     {ok, S2Word, R1AfterStep2} = step2(S1Word, R1AfterStep1),
     {ok, S3Word, R1AfterStep3} = step3(S2Word, R1AfterStep2),
     {ok, Stem, _} = step4(S3Word, R1AfterStep3),
-    Stem.
+    Stem;
+stem(Word) ->
+    string:to_lower(Word).
 
 %%====================================================================
 %% Internal functions
@@ -386,5 +392,11 @@ is_vowel_test() ->
 removesuffix_test() ->
     ?assertMatch({ok, "fisk", "k"}, removesuffix("fiskdel", "kdel", "del")).
     
+stem_binary_test() ->
+    ?assertEqual(<<"unders\x{E5}t"/utf8>>, stem(<<"unders\x{E5}tter"/utf8>>)),
+    ?assertEqual(<<"indtag"/utf8>>, stem(<<"indtage"/utf8>>)),
+    ?assertEqual(<<"indt"/utf8>>, stem(<<"indt"/utf8>>)),
+    ?assertEqual(<<"ind"/utf8>>, stem(<<"ind"/utf8>>)),
+    ?assertEqual(<<"i"/utf8>>, stem(<<"i"/utf8>>)).
 
 -endif.

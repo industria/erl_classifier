@@ -10,7 +10,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0]).
+-export([start_link/0, train/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -29,6 +29,9 @@
 %%--------------------------------------------------------------------
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+
+train(Class, Document) when is_atom(Class), is_binary(Document) ->
+    gen_server:call(?SERVER, {train, Class, Document}).
 
 %%====================================================================
 %% gen_server callbacks
@@ -53,8 +56,9 @@ init([]) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
-handle_call(_Request, _From, State) ->
-    Reply = ok,
+handle_call({train, Class, Document},  _From, State) ->
+    FD = ec_feature_extraction:features(danish, Document),
+    Reply = FD,
     {reply, Reply, State}.
 
 %%--------------------------------------------------------------------
