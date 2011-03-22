@@ -9,6 +9,7 @@
              ec_tokenizer
             ]},
   {registered, []},
+%%  {applications, [kernel, sasl, stdlib, mnesia]},
   {applications, [kernel, stdlib]},
   {mod, {erl_classifier_app, []}}
  ]}.

@@ -5,3 +5,5 @@
 # Erlang beam files
 *.beam
 ebin/*
+# Mnesia datastore
+datastore/*
