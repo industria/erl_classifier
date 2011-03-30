@@ -8,7 +8,7 @@
 -module(ec_store).
 
 %% API
--export([init_tables/0, delete_tables/0, new_id/1]).
+-export([init_tables/0, delete_tables/0, new_id/1, term/1]).
 
 -record(ids, {id_name, id}).
 
@@ -29,6 +29,10 @@ delete_tables() ->
     mnesia:delete_table(ids),
     mnesia:delete_table(terms).
 
+%%--------------------------------------------------------------------
+%% Function: new_id(Idname) -> {atomic, NewId} | {aborted, Reason}
+%% Description: Get the new/next id for a table named by Idname.
+%%--------------------------------------------------------------------
 new_id(Idname) ->
     Trans = fun() ->
 	case mnesia:wread({ids, Idname}) of
@@ -42,6 +46,28 @@ new_id(Idname) ->
 	end
     end,
     mnesia:transaction(Trans).
+
+%%--------------------------------------------------------------------
+%% Function: term(Term) -> TermId 
+%% Description: Return id for the Term, 
+%%              the Term is added ti terms table if it doesn't exist
+%%--------------------------------------------------------------------
+term(Term) ->
+    %% TODO: update Class 
+    case mnesia:dirty_read({terms, Term}) of
+	[T] ->
+	    T#terms.term_id;
+	_ ->
+	    %% Create a new Term entry
+	    Trans = fun() ->
+		{atomic, TermId} = new_id(terms),	    
+		TermEntry = #terms{term = Term, term_id = TermId},
+		mnesia:write(TermEntry),
+		TermId
+	    end,
+	    {atomic, Id} = mnesia:transaction(Trans),
+	    Id
+    end.
 
 %%--------------------------------------------------------------------
 %% Function: 
