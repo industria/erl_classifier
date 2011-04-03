@@ -9,13 +9,13 @@
 
 %% API
 -export([init_tables/0, delete_tables/0, term/1, 
-	 update_term_class_frequency/3]).
+	 term_class_frequency/2, update_term_class_frequency/3]).
 
 -record(ids, {table, id}).
 
 -record(terms, {term, term_id}).
 
--record(term_class_frequency, {term_id, class, count}).
+-record(term_class_frequency, {class_term_id, count}).
 
 
 %%====================================================================
@@ -54,12 +54,40 @@ term(Term) ->
 	    Id
     end.
 
+
 %%--------------------------------------------------------------------
-%% Function: 
-%% Description:
+%% Function: update_term_class_frequency(TermId, Class, Count)
+%% Description: Updates the class termid with cound,
+%%              creating a new entry if one doesn't exists.
+%%--------------------------------------------------------------------
+term_class_frequency(TermId, Class) ->
+    Class_TermId = {Class, TermId},
+    case mnesia:dirty_read({term_class_frequency, Class_TermId}) of
+	[Freq] -> Freq#term_class_frequency.count;
+	_ -> 0
+    end.
+
+%%--------------------------------------------------------------------
+%% Function: update_term_class_frequency(TermId, Class, Count)
+%% Description: Updates the class termid with cound,
+%%              creating a new entry if one doesn't exists.
 %%--------------------------------------------------------------------
 update_term_class_frequency(TermId, Class, Count) ->
-    1.
+    Class_TermId = {Class, TermId},
+    mnesia:transaction(fun() ->
+	case mnesia:wread({term_class_frequency, Class_TermId}) of		       
+	    [CT] ->
+		%% Update the record
+		NewCount = Count + CT#term_class_frequency.count,
+		CTC = CT#term_class_frequency{count = NewCount},
+		mnesia:write(CTC);
+	     _ ->
+		%% New record
+		NewCT = #term_class_frequency{class_term_id = Class_TermId, 
+					      count = Count},
+		mnesia:write(NewCT)
+	end
+    end).
 %%====================================================================
 %% Internal functions
 %%====================================================================
@@ -75,7 +103,7 @@ create_tables() ->
 			 {attributes, record_info(fields, terms)}
 			]),
     mnesia:create_table(term_class_frequency, 
-			[{type, bag},
+			[{type, set},
 			 {disc_copies, [node()]},
 			 {attributes, record_info(fields, term_class_frequency)}
 			]),
