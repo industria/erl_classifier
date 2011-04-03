@@ -8,11 +8,15 @@
 -module(ec_store).
 
 %% API
--export([init_tables/0, delete_tables/0, new_id/1, term/1]).
+-export([init_tables/0, delete_tables/0, term/1, 
+	 update_term_class_frequency/3]).
 
--record(ids, {id_name, id}).
+-record(ids, {table, id}).
 
 -record(terms, {term, term_id}).
+
+-record(term_class_frequency, {term_id, class, count}).
+
 
 %%====================================================================
 %% API
@@ -22,30 +26,12 @@
 %% Description:
 %%--------------------------------------------------------------------
 init_tables() ->
-    create_tables(),
-    init_ids_table().
+    create_tables().
 
 delete_tables() ->
     mnesia:delete_table(ids),
-    mnesia:delete_table(terms).
-
-%%--------------------------------------------------------------------
-%% Function: new_id(Idname) -> {atomic, NewId} | {aborted, Reason}
-%% Description: Get the new/next id for a table named by Idname.
-%%--------------------------------------------------------------------
-new_id(Idname) ->
-    Trans = fun() ->
-	case mnesia:wread({ids, Idname}) of
-	    [ID] ->
-		NewId = ID#ids.id + 1,
-		UpdatedID = ID#ids{id = NewId},
-		mnesia:write(UpdatedID),
-		NewId;
-	    _ ->
-		mnesia:abort("id_name not found")
-	end
-    end,
-    mnesia:transaction(Trans).
+    mnesia:delete_table(terms),
+    mnesia:delete_table(term_class_frequency).
 
 %%--------------------------------------------------------------------
 %% Function: term(Term) -> TermId 
@@ -53,14 +39,13 @@ new_id(Idname) ->
 %%              the Term is added ti terms table if it doesn't exist
 %%--------------------------------------------------------------------
 term(Term) ->
-    %% TODO: update Class 
     case mnesia:dirty_read({terms, Term}) of
 	[T] ->
 	    T#terms.term_id;
 	_ ->
 	    %% Create a new Term entry
 	    Trans = fun() ->
-		{atomic, TermId} = new_id(terms),	    
+		TermId = mnesia:dirty_update_counter({ids, term_id}, 1),
 		TermEntry = #terms{term = Term, term_id = TermId},
 		mnesia:write(TermEntry),
 		TermId
@@ -73,24 +58,26 @@ term(Term) ->
 %% Function: 
 %% Description:
 %%--------------------------------------------------------------------
-
+update_term_class_frequency(TermId, Class, Count) ->
+    1.
 %%====================================================================
 %% Internal functions
 %%====================================================================
 create_tables() ->
-    mnesia:create_table(ids, [{type, set},
-			      {disc_copies, [node()]},
-			      {attributes, record_info(fields, ids)}
-			     ]),
-    mnesia:create_table(terms, [{type, set},
-				{disc_copies, [node()]},
-				{attributes, record_info(fields, terms)}
-			       ]),
-    mnesia:wait_for_tables([ids, terms], 60000).
+    mnesia:create_table(ids, 
+    			[{type, set},
+    			 {disc_copies, [node()]},
+    			 {attributes, record_info(fields, ids)}
+    			]),
+    mnesia:create_table(terms, 
+			[{type, set},
+			 {disc_copies, [node()]},
+			 {attributes, record_info(fields, terms)}
+			]),
+    mnesia:create_table(term_class_frequency, 
+			[{type, bag},
+			 {disc_copies, [node()]},
+			 {attributes, record_info(fields, term_class_frequency)}
+			]),
 
-init_ids_table() ->
-    Id_terms = #ids{id_name=terms, id=0},
-    mnesia:transaction(fun() ->
-			       mnesia:write(Id_terms)
-		       end).
-			   
+    mnesia:wait_for_tables([terms, term_class_frequency], 60000).
