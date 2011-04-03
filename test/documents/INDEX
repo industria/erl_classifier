@@ -2,3 +2,7 @@
 
 polsport.txt : Danish, article from politiken.dk sport
 polsport_words.txt : The polsport.txt file split to one word per line.
+
+cykling_001 - cykling_055 : Cykling articles from politiken.dk
+f1_001 	    - f1_055 	  : Formula 1 articles from politiken.dk
+fodbold_001 - fodbold_055 : Football articles from politiken.dk
