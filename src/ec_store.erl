@@ -56,20 +56,41 @@ term(Term) ->
 
 
 %%--------------------------------------------------------------------
-%% Function: update_term_class_frequency(TermId, Class, Count)
-%% Description: Updates the class termid with cound,
-%%              creating a new entry if one doesn't exists.
+%% Function: term_class_frequency(Term, Class) -> Integer()
+%% Description: Get the term class frequency for a class (binary term).
 %%--------------------------------------------------------------------
-term_class_frequency(TermId, Class) ->
+term_class_frequency(Term, Class) when is_binary(Term), is_atom(Class) ->
+    case mnesia:dirty_read({terms, Term}) of
+	[Terms] -> term_class_frequency(Terms#terms.term_id, Class);
+	_ -> 0
+    end;
+
+%%--------------------------------------------------------------------
+%% Function: term_class_frequency(TermId, Class) -> Integer()
+%% Description: Get the term class frequency for a class
+%%--------------------------------------------------------------------
+term_class_frequency(TermId, Class) when is_integer(TermId), is_atom(Class) ->
     Class_TermId = {Class, TermId},
     case mnesia:dirty_read({term_class_frequency, Class_TermId}) of
 	[Freq] -> Freq#term_class_frequency.count;
 	_ -> 0
     end.
 
+
+%%--------------------------------------------------------------------
+%% Function: update_term_class_frequency(Term, Class, Count)
+%% Description: Updates the class term with count,
+%%              creating a new entry if one doesn't exists.
+%%--------------------------------------------------------------------
+update_term_class_frequency(Term, Class, Count) when is_binary(Term), 
+						     is_atom(Class), 
+						     is_integer(Count) ->
+    TermId = term(Term),
+    update_term_class_frequency(TermId, Class, Count);
+
 %%--------------------------------------------------------------------
 %% Function: update_term_class_frequency(TermId, Class, Count)
-%% Description: Updates the class termid with cound,
+%% Description: Updates the class termid with count,
 %%              creating a new entry if one doesn't exists.
 %%--------------------------------------------------------------------
 update_term_class_frequency(TermId, Class, Count) ->
