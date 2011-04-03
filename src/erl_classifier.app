@@ -10,7 +10,7 @@
             ]},
   {registered, []},
 %%  {applications, [kernel, sasl, stdlib, mnesia]},
-  {applications, [kernel, stdlib]},
+  {applications, [kernel, stdlib, mnesia]},
   {mod, {erl_classifier_app, []}}
  ]}.
 
