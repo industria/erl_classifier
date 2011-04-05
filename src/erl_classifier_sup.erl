@@ -42,7 +42,9 @@ start_link() ->
 init([]) ->
     TrainerServer = {ec_trainer,{ec_trainer, start_link, []},
 		     permanent, 2000, worker, [ec_trainer]},
-    Children = [TrainerServer],
+    ClassifyServer = {ec_classifier, {ec_classifier, start_link, []},
+		      permanent, 2000, worker, [ec_classifier]},
+    Children = [TrainerServer, ClassifyServer],
     RestartStrategy = {one_for_one, 0, 1},
     {ok, { RestartStrategy, Children} }.
 
