@@ -8,7 +8,7 @@
 -module(ec_store).
 
 %% API
--export([init_tables/0, delete_tables/0, term/1, 
+-export([init_tables/0, delete_tables/0, add_document/2, term/1, 
 	 term_class_frequency/2, update_term_class_frequency/3]).
 
 -record(ids, {table, id}).
@@ -37,6 +37,25 @@ delete_tables() ->
     mnesia:delete_table(term_frequency),
     mnesia:delete_table(term_class_frequency),
     mnesia:delete_table(document_class_frequency).
+
+
+%%--------------------------------------------------------------------
+%% Function: add_document(Class, DocumentFrequency)
+%% Description: Add a document represented as a document frequency
+%%              list to a given class.
+%%--------------------------------------------------------------------
+add_document(Class, FrequencyDistribution) ->
+    T = fun() -> 
+		update_document_class_frequency(Class),
+		Updater = fun({Term, Count}) ->
+				  TermId = term(Term),
+				  update_term_frequency(TermId, Count),
+				  update_term_class_frequency(Term, Class, Count)
+			  end,
+		lists:foreach(Updater, FrequencyDistribution)
+    end,
+    mnesia:transaction(T).
+
 
 %%--------------------------------------------------------------------
 %% Function: term(Term) -> TermId 
@@ -145,3 +164,29 @@ create_tables() ->
 			]),
 
     mnesia:wait_for_tables([terms, term_class_frequency], 60000).
+
+
+
+update_document_class_frequency(Class) ->
+    case mnesia:wread({document_class_frequency, Class}) of
+	[DCT] ->
+	    Count = DCT#document_class_frequency.count + 1,
+	    Updated = DCT#document_class_frequency{count = Count},
+	    mnesia:write(Updated);
+	_ -> 
+	   New = #document_class_frequency{class = Class, count = 1},
+	   mnesia:write(New)
+    end.
+		      
+		      
+	    
+update_term_frequency(TermId, Count) ->
+    case mnesia:wread({term_frequency, TermId}) of
+	[TF] ->
+	    NewCount = TF#term_frequency.count + 1,
+	    Updated = TF#term_frequency{count = NewCount},
+	    mnesia:write(Updated);
+	_ ->
+	    New = #term_frequency{term_id = TermId, count = Count},
+	    mnesia:write(New)
+    end.

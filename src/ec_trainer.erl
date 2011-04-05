@@ -58,11 +58,8 @@ init([]) ->
 %%--------------------------------------------------------------------
 handle_call({train, Class, Document},  _From, State) ->
     FD = ec_feature_extraction:features(danish, Document),
-    Updater = fun({Term, Count}) -> 
-		      ec_store:update_term_class_frequency(Term, Class, Count)
-	      end,
-    lists:foreach(Updater, FD),
-    Reply = {ok, updated},
+    Return = ec_store:add_document(Class, FD),
+    Reply = {ok, Return},
     {reply, Reply, State}.
 
 %%--------------------------------------------------------------------
