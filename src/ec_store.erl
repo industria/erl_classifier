@@ -9,7 +9,8 @@
 
 %% API
 -export([init_tables/0, delete_tables/0, add_document/2, term/1, 
-	 term_class_frequency/2, update_term_class_frequency/3]).
+	 term_class_frequency/2, update_term_class_frequency/3,
+	 classes/0]).
 
 -record(ids, {table, id}).
 
@@ -37,6 +38,14 @@ delete_tables() ->
     mnesia:delete_table(term_frequency),
     mnesia:delete_table(term_class_frequency),
     mnesia:delete_table(document_class_frequency).
+
+
+%%--------------------------------------------------------------------
+%% Function: classes() -> [ class = atom() ]
+%% Description: Get a list of classes known to the classifier.
+%%--------------------------------------------------------------------
+classes() ->
+    all_table_keys(document_class_frequency, '$start', []).
 
 
 %%--------------------------------------------------------------------
@@ -190,3 +199,22 @@ update_term_frequency(TermId, Count) ->
 	    New = #term_frequency{term_id = TermId, count = Count},
 	    mnesia:write(New)
     end.
+
+
+%%--------------------------------------------------------------------
+%% Function: all_table_keys(Table, Key, Keys) -> [ Key = atom() ]
+%% Description: List of all keys in Table, start by sending the
+%%              the atom '$start' in the initial call.
+%%--------------------------------------------------------------------
+all_table_keys(Table, '$start', Keys) ->
+    Key = mnesia:dirty_first(Table),
+    all_table_keys(Table, Key, Keys);
+all_table_keys(_Table, '$end_of_table', Keys) ->
+    Keys;
+all_table_keys(Table, Key, Keys) ->
+    KL = [Key | Keys],
+    NextKey = mnesia:dirty_next(Table, Key),
+    all_table_keys(Table, NextKey, KL).
+
+ 
+    
