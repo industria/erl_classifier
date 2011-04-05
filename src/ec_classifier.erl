@@ -10,7 +10,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0]).
+-export([start_link/0, class/1, classify/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -29,6 +29,22 @@
 %%--------------------------------------------------------------------
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+
+
+%%--------------------------------------------------------------------
+%% Function: class(Document) -> atom() 
+%% Description: Get the class of the document.
+%%--------------------------------------------------------------------
+class(Document) when is_binary(Document) ->
+    gen_server:call(?SERVER, {class, Document}).
+
+
+%%--------------------------------------------------------------------
+%% Function: classify(Document) -> [ {atom(), measure} ] 
+%% Description: Get a list of classes and measure for the document.
+%%--------------------------------------------------------------------
+classify(Document) when is_binary(Document) ->
+    gen_server:call(?SERVER, {classify, Document}).
 
 %%====================================================================
 %% gen_server callbacks
@@ -53,7 +69,16 @@ init([]) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
-handle_call(_Request, _From, State) ->
+handle_call({classify, Document}, _From, State) ->
+    FD = ec_feature_extraction:features(danish, Document),
+    Classes = ec_store:classes(),
+    Reply = Classes,
+    {reply, Reply, State};
+
+handle_call({class, Document}, _From, State) ->
+    %% This is basically classify with an argmax on the list
+    %% Do classify first and factor it list calculation
+    %% call that and do the argmax over it.
     Reply = ok,
     {reply, Reply, State}.
 
@@ -95,3 +120,5 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+
+
