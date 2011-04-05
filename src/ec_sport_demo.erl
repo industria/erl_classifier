@@ -33,7 +33,7 @@ train() ->
 				 {ok, Doc} = file:read_file(DocFile),
 				 R = ec_trainer:train(Class, Doc),
 				 io:fwrite("~p ~n", [R]),
-				 timer:sleep(500);
+				 timer:sleep(100);
 			     true -> 0
 			 end
 		 end, Files).
