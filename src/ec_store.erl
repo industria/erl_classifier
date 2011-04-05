@@ -17,6 +17,9 @@
 
 -record(term_class_frequency, {class_term_id, count}).
 
+-record(document_class_frequency, {class, count}).
+
+-record(term_frequency, {term_id, count}).
 
 %%====================================================================
 %% API
@@ -31,7 +34,9 @@ init_tables() ->
 delete_tables() ->
     mnesia:delete_table(ids),
     mnesia:delete_table(terms),
-    mnesia:delete_table(term_class_frequency).
+    mnesia:delete_table(term_frequency),
+    mnesia:delete_table(term_class_frequency),
+    mnesia:delete_table(document_class_frequency).
 
 %%--------------------------------------------------------------------
 %% Function: term(Term) -> TermId 
@@ -123,10 +128,20 @@ create_tables() ->
 			 {disc_copies, [node()]},
 			 {attributes, record_info(fields, terms)}
 			]),
+    mnesia:create_table(term_frequency, 
+			[{type, set},
+			 {disc_copies, [node()]},
+			 {attributes, record_info(fields, term_frequency)}
+			]),
     mnesia:create_table(term_class_frequency, 
 			[{type, set},
 			 {disc_copies, [node()]},
 			 {attributes, record_info(fields, term_class_frequency)}
+			]),
+    mnesia:create_table(document_class_frequency, 
+			[{type, set},
+			 {disc_copies, [node()]},
+			 {attributes, record_info(fields, document_class_frequency)}
 			]),
 
     mnesia:wait_for_tables([terms, term_class_frequency], 60000).
