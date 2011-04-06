@@ -83,6 +83,7 @@ handle_call({classify, Document}, _From, State) ->
 						       Tctm = ec_store:term_frequency(TermId),
 						       B = length(Classes),
 						       Pcd = (Tct + 1) / (Tctm + B),
+						       %% TODO: Pcd should be raised to the power of count in FD
 						       [ {Tct, Tctm, Pcd, Term} | TAccIn]
 					       end, [], FD),
 			     [{Class, Pc, Ptc} | AccIn]
