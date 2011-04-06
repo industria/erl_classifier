@@ -8,9 +8,9 @@
 -module(ec_store).
 
 %% API
--export([init_tables/0, delete_tables/0, add_document/2, term/1, 
-	 term_class_frequency/2, update_term_class_frequency/3,
-	 classes/0]).
+-export([init_tables/0, delete_tables/0, add_document/2, term/1, term_id/1,
+	 term_frequency/1, term_class_frequency/2, update_term_class_frequency/3,
+	 classes/0, ndocuments/0, ndocuments_in_class/1]).
 
 -record(ids, {table, id}).
 
@@ -45,7 +45,32 @@ delete_tables() ->
 %% Description: Get a list of classes known to the classifier.
 %%--------------------------------------------------------------------
 classes() ->
-    all_table_keys(document_class_frequency, '$start', []).
+    T = fun() ->
+		mnesia:foldl(fun(Record, NewAcc) ->
+				     [Record#document_class_frequency.class | NewAcc]
+					 end, [], document_class_frequency)
+		    end,
+    {atomic, Classes} = mnesia:transaction(T),
+    Classes.
+
+ndocuments() ->
+    T = fun() ->
+		mnesia:foldl(fun(Record, NewAcc) ->
+				     NewAcc + Record#document_class_frequency.count
+			     end, 0, document_class_frequency)
+	end,
+    {atomic, N} = mnesia:transaction(T),
+    N.
+
+ndocuments_in_class(Class) ->
+    case mnesia:dirty_read({document_class_frequency, Class}) of
+	[C] ->
+	    C#document_class_frequency.count;
+	_ ->
+	    0
+    end.
+    
+
 
 
 %%--------------------------------------------------------------------
@@ -59,7 +84,7 @@ add_document(Class, FrequencyDistribution) ->
 		Updater = fun({Term, Count}) ->
 				  TermId = term(Term),
 				  update_term_frequency(TermId, Count),
-				  update_term_class_frequency(Term, Class, Count)
+				  update_term_class_frequency(TermId, Class, Count)
 			  end,
 		lists:foreach(Updater, FrequencyDistribution)
     end,
@@ -88,6 +113,23 @@ term(Term) ->
     end.
 
 
+term_id(Term) when is_binary(Term) ->
+    case mnesia:dirty_read({terms, Term}) of
+	[Terms] -> 
+	    Terms#terms.term_id;
+	_ -> 
+	    -1
+    end.
+    
+term_frequency(TermId) when is_integer(TermId) ->
+    case mnesia:dirty_read({term_frequency, TermId}) of
+	[TF] -> 
+	    TF#term_frequency.count;
+	 _ -> 
+	    0
+    end.
+
+
 %%--------------------------------------------------------------------
 %% Function: term_class_frequency(Term, Class) -> Integer()
 %% Description: Get the term class frequency for a class (binary term).
@@ -109,17 +151,6 @@ term_class_frequency(TermId, Class) when is_integer(TermId), is_atom(Class) ->
 	_ -> 0
     end.
 
-
-%%--------------------------------------------------------------------
-%% Function: update_term_class_frequency(Term, Class, Count)
-%% Description: Updates the class term with count,
-%%              creating a new entry if one doesn't exists.
-%%--------------------------------------------------------------------
-update_term_class_frequency(Term, Class, Count) when is_binary(Term), 
-						     is_atom(Class), 
-						     is_integer(Count) ->
-    TermId = term(Term),
-    update_term_class_frequency(TermId, Class, Count);
 
 %%--------------------------------------------------------------------
 %% Function: update_term_class_frequency(TermId, Class, Count)
@@ -192,7 +223,7 @@ update_document_class_frequency(Class) ->
 update_term_frequency(TermId, Count) ->
     case mnesia:wread({term_frequency, TermId}) of
 	[TF] ->
-	    NewCount = TF#term_frequency.count + 1,
+	    NewCount = Count + TF#term_frequency.count,
 	    Updated = TF#term_frequency{count = NewCount},
 	    mnesia:write(Updated);
 	_ ->
@@ -201,20 +232,6 @@ update_term_frequency(TermId, Count) ->
     end.
 
 
-%%--------------------------------------------------------------------
-%% Function: all_table_keys(Table, Key, Keys) -> [ Key = atom() ]
-%% Description: List of all keys in Table, start by sending the
-%%              the atom '$start' in the initial call.
-%%--------------------------------------------------------------------
-all_table_keys(Table, '$start', Keys) ->
-    Key = mnesia:dirty_first(Table),
-    all_table_keys(Table, Key, Keys);
-all_table_keys(_Table, '$end_of_table', Keys) ->
-    Keys;
-all_table_keys(Table, Key, Keys) ->
-    KL = [Key | Keys],
-    NextKey = mnesia:dirty_next(Table, Key),
-    all_table_keys(Table, NextKey, KL).
 
  
     
