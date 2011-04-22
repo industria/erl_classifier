@@ -12,6 +12,9 @@
 	 term_frequency/1, term_class_frequency/2, update_term_class_frequency/3,
 	 classes/0, ndocuments/0, ndocuments_in_class/1]).
 
+-export([stopword_update/0]).
+
+
 -record(ids, {table, id}).
 
 -record(terms, {term, term_id}).
@@ -22,9 +25,33 @@
 
 -record(term_frequency, {term_id, count}).
 
+-record(stopwords, {language_term, dummy = unused}).
+%% Mnesia tables must have at least one extra attribute in addition
+%% to the key, hence the dummy attribute in the record definition.
+
 %%====================================================================
 %% API
 %%====================================================================
+
+
+%%--------------------------------------------------------------------
+%% Function: stopword_update()
+%% Description: Update the stopwords table with the stopwords found
+%% in stopword directory.
+%%--------------------------------------------------------------------
+stopword_update() ->
+    %% [ { lang, [words] } ]
+    StopwordLists = ec_stopwords:stopword_lists(),
+    lists:foreach(
+      fun({Language, Terms}) ->
+	      lists:foreach(
+		fun(Term) ->
+			R = #stopwords{language_term={Language, Term}},
+			mnesia:dirty_write(stopwords, R)
+		end, Terms)
+      end, StopwordLists),
+    ok.
+
 %%--------------------------------------------------------------------
 %% Function: 
 %% Description:
@@ -37,7 +64,8 @@ delete_tables() ->
     mnesia:delete_table(terms),
     mnesia:delete_table(term_frequency),
     mnesia:delete_table(term_class_frequency),
-    mnesia:delete_table(document_class_frequency).
+    mnesia:delete_table(document_class_frequency),
+    mnesia:delete_table(stopwords).
 
 
 %%--------------------------------------------------------------------
@@ -201,6 +229,11 @@ create_tables() ->
 			[{type, set},
 			 {disc_copies, [node()]},
 			 {attributes, record_info(fields, document_class_frequency)}
+			]),
+    mnesia:create_table(stopwords, 
+			[{type, set},
+			 {disc_copies, [node()]},
+			 {attributes, record_info(fields, stopwords)}
 			]),
 
     mnesia:wait_for_tables([terms, term_class_frequency], 60000).
