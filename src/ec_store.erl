@@ -44,7 +44,7 @@
 is_stopword(Language, Term) ->
     Key =  {Language, Term},
     case mnesia:dirty_read(stopwords, Key) of
-	[L] ->
+	[_] ->
 	    true;
 	_ ->
 	    false
