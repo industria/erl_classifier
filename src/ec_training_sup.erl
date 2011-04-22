@@ -1,11 +1,13 @@
 %%%-------------------------------------------------------------------
-%%% File    : erl_classifier_sup.erl
-%%% Author  : James Lindstorff <james@ind-x301>
-%%% Description : Root supervisor for Naive Bayes classifier.
+%%% File    : ec_training_sup.erl
+%%% Author  : James Lindstorff <james@ind-w700ds>
+%%% Description : Supervisor for the training processes. 
+%%% There is a training process for each class in the classifier.
+%%% For a simple positiv/negativ classifier only one process is needed.
 %%%
-%%% Created : 15 Mar 2011 by James Lindstorff <james@ind-x301>
+%%% Created : 22 Apr 2011 by James Lindstorff <james@ind-w700ds>
 %%%-------------------------------------------------------------------
--module(erl_classifier_sup).
+-module(ec_training_sup).
 
 -behaviour(supervisor).
 
@@ -25,7 +27,7 @@
 %% Description: Starts the supervisor
 %%--------------------------------------------------------------------
 start_link() ->
-    supervisor:start_link({local, ?SERVER}, ?MODULE, []).
+    supervisor:start_link({local, ?SERVER}, ?MODULE, [f1, cykling, fodbold]).
 
 %%====================================================================
 %% Supervisor callbacks
@@ -39,7 +41,7 @@ start_link() ->
 %% to find out about restart strategy, maximum restart frequency and child 
 %% specifications.
 %%--------------------------------------------------------------------
-init([]) ->
+init(Classes) ->
     %% Child specification is a tuple like:
     %% {ID, Start, Restart, Shutdown, Type, Modules}
     %% ID : identified the specification internally
@@ -48,30 +50,24 @@ init([]) ->
     %% Shutdown: Integer milliseconds for soft, brutal_kill or infinity
     %% Type: Process type, supervisor or worker
     %% Modules: The modules the process depends on (for hot code upgrades)
+    CB = fun(Class, Children) ->
+		 ClassString = atom_to_list(Class),
+		 SpecString = string:join(["ec_ct_", ClassString], ""),
+		 SpecId = list_to_atom(SpecString),
+		 MFA = {ec_class_trainer, start_link, [SpecId, Class]},
+		 Child = {SpecId,
+			  MFA, 
+			  permanent,
+			  2000,
+			  worker,
+			  [ec_class_trainer]
+			 },
+		 [Child | Children]
+    end,
 
-    TrainingSup = {ec_training_sup,
-		   {ec_training_sup, start_link, []},
-		   permanent,
-		   infinity,
-		   supervisor,
-		   [ec_training_sup]},
-    TrainerServer = {ec_trainer,
-		     {ec_trainer, start_link, []},
-		     permanent, 
-		     2000, 
-		     worker, 
-		     [ec_trainer]},
-    ClassifyServer = {ec_classifier, 
-		      {ec_classifier, start_link, []},
-		      permanent, 
-		      2000, 
-		      worker, 
-		      [ec_classifier]},
-    Children = [TrainingSup, TrainerServer, ClassifyServer],
-    %% Restart: {How, Max, Within}
-    %% production rule of thumb is 4 in 3600 = four per hour
-    RestartStrategy = {one_for_one, 0, 1},
-    {ok, { RestartStrategy, Children} }.
+    ClassTrainerChildren = lists:foldl(CB, [], Classes),
+    %% TODO: Remember to update the restart strategy 4, 3600
+    {ok,{{one_for_all,0,1}, ClassTrainerChildren}}.
 
 %%====================================================================
 %% Internal functions
