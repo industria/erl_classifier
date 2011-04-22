@@ -7,7 +7,7 @@ Note: All files are expected to be UTF8 encoded.
 
 Stop word lists:
 
-     - Are are kept in priv/stopwords/
+     - Are kept in priv/stopwords/
      - Must be named lang.stopwords where lang the language of the stop words
      - Avoid multiple . in the filenames because only the first part up to the
        first . will be extracted as the language.
