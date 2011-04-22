@@ -4,6 +4,15 @@ Naive Bayes classifier in Erlang
 Note: All files are expected to be UTF8 encoded.
 
 
+
+Stop word lists:
+
+     - Are are kept in priv/stopwords/
+     - Must be named lang.stopwords where lang the language of the stop words
+     - Avoid multiple . in the filenames because only the first part up to the
+       first . will be extracted as the language.
+     - Generelly not much checking is done on the filenames and their content.
+
 Setting up the mnesia datastore:
 
 -- make console
