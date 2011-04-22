@@ -29,7 +29,9 @@ features(danish, Document) when is_binary(Document) ->
     DN = ec_document_processing:normalize_whitespace(DP),
     Low = ec_document_processing:to_lowercase(DN),
     Terms = ec_tokenizer:word_tokenize(Low),
-    StemmedTerms = [ ec_danish_stemmer:stem(Term) || Term <- Terms],
+    %% Filter for stopwords
+    NonStopTerms = [ ST || ST <- Terms,  not ec_stopwords:is_stopword(danish, ST)],
+    StemmedTerms = [ ec_danish_stemmer:stem(Term) || Term <- NonStopTerms],
     ec_frequency_distribution:create(StemmedTerms).
 
 %%====================================================================

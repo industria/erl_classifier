@@ -13,7 +13,7 @@
 
 
 %% API
--export([stopword_lists/0]).
+-export([is_stopword/2, stopword_lists/0]).
 
 -define(SUFFIX, "stopwords").
 -define(STOPWORD_LOCATION, "priv/stopwords").
@@ -21,6 +21,15 @@
 %%====================================================================
 %% API
 %%====================================================================
+
+%%--------------------------------------------------------------------
+%% Function: is_stopword(Language, Term) -> boolean
+%% Description: Will check is the Term is a stopword in the given
+%% Language. Unknown languages are defined as having no stopwords.
+%%--------------------------------------------------------------------
+is_stopword(Language, Term) when is_atom(Language), is_binary(Term) ->
+    ec_store:is_stopword(Language, Term).
+
 %%--------------------------------------------------------------------
 %% Function: stopword_lists() -> [ { lang, [words] } ]
 %% Description: Return the stopword lists defined as a list of

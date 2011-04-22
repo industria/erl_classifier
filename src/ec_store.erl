@@ -12,7 +12,7 @@
 	 term_frequency/1, term_class_frequency/2, update_term_class_frequency/3,
 	 classes/0, ndocuments/0, ndocuments_in_class/1]).
 
--export([stopword_update/0]).
+-export([stopword_update/0, is_stopword/2]).
 
 
 -record(ids, {table, id}).
@@ -33,6 +33,22 @@
 %% API
 %%====================================================================
 
+
+%%--------------------------------------------------------------------
+%% Function: is_stopword(Language, Term) -> boolean
+%% Description: Check for the {Language, Term} key indicating 
+%% that the term is defined as a stopword for the Language.
+%% Note: Applications should use the API in ec_stopwords this module
+%% should be considered internal.
+%%--------------------------------------------------------------------
+is_stopword(Language, Term) ->
+    Key =  {Language, Term},
+    case mnesia:dirty_read(stopwords, Key) of
+	[L] ->
+	    true;
+	_ ->
+	    false
+    end.
 
 %%--------------------------------------------------------------------
 %% Function: stopword_update()
