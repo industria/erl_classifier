@@ -1,6 +1,9 @@
 Naive Bayes classifier in Erlang
 
 
+Note: All files are expected to be UTF8 encoded.
+
+
 Setting up the mnesia datastore:
 
 -- make console
