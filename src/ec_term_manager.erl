@@ -25,15 +25,16 @@
 %%====================================================================
 
 %%--------------------------------------------------------------------
-%% Function: update(Term) -> {ok, TermId}
-%% Description: Update the term storage. 
-%% The function checks if the term exists already and returns the
-%% existing term id before creating a new.
+%% Function: update(Term | [Term]) -> {ok, TermId} | {ok, [TermId]}
+%% Description: Update the term vocabulary a single term or with 
+%% a list of terms. The function will check if any of the terms exists
+%% already and returns the existing id before creating a new one.
 %% Note: This is the single point that will write to the vocabulary.
 %%--------------------------------------------------------------------
 update(Term) when is_binary(Term) ->
-    gen_server:call(?SERVER, {update, Term}).
-
+    gen_server:call(?SERVER, {update, Term});
+update(Terms) when is_list(Terms) ->
+    gen_server:call(?SERVER, {update_list, Terms}).
 	    
 
 %%--------------------------------------------------------------------
@@ -67,13 +68,19 @@ init([]) ->
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
 handle_call({update, Term}, _From, State) ->
-    Reply = case ec_store:term_id(Term) of
-		{ok, TermId} ->
-		    {ok, TermId};
-		unknown ->
-		    ec_store:new_term(Term)
-    end,
+    Reply = term_lookup_update(Term),
+    {reply, Reply, State};
+
+handle_call({update_list, Terms}, _From, State) ->
+    TermUpdate = fun(Term, Acc) ->
+			 {ok, TermId} = term_lookup_update(Term),
+			 [TermId | Acc]
+		 end,
+    TermIds = lists:foldl(TermUpdate, [], Terms),
+    %% Reverse the list so it has the same as the terms list
+    Reply = {ok, lists:reverse(TermIds)},
     {reply, Reply, State}.
+
 
 %%--------------------------------------------------------------------
 %% Function: handle_cast(Msg, State) -> {noreply, State} |
@@ -113,3 +120,11 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+
+term_lookup_update(Term) ->
+    case ec_store:term_id(Term) of
+	{ok, TermId} ->
+	    {ok, TermId};
+	unknown ->
+	    ec_store:new_term(Term)
+    end.
