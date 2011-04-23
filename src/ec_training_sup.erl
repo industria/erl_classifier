@@ -73,10 +73,27 @@ init(Classes) ->
 			worker,
 			[ec_term_manager]
 		       },
-    ChildrenToStart = [TermManagerChild | ClassTrainerChildren],
+
+    ClassTrainerSpecIds = class_trainers(ClassTrainerChildren),
+
+    Coach = {ec_coach,
+	     {ec_coach, start_link, [ ClassTrainerSpecIds ]},
+	     permanent,
+	     2000,
+	     worker,
+	     [ec_coach]
+	     },
+
+    ChildrenToStart = [Coach, TermManagerChild | ClassTrainerChildren],
     %% TODO: Remember to update the restart strategy 4, 3600
     {ok,{{one_for_all,0,1}, ChildrenToStart}}.
 
 %%====================================================================
 %% Internal functions
 %%====================================================================
+
+%% Pull the specification ids from a list of child specifications
+class_trainers(ClassTrainerSpecs) ->
+    [ SpecId || {SpecId, _, _, _, _, _} <- ClassTrainerSpecs].
+
+		 
