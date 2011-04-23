@@ -55,19 +55,14 @@ init(Classes) ->
 		   infinity,
 		   supervisor,
 		   [ec_training_sup]},
-    TrainerServer = {ec_trainer,
-		     {ec_trainer, start_link, []},
-		     permanent, 
-		     2000, 
-		     worker, 
-		     [ec_trainer]},
+
     ClassifyServer = {ec_classifier, 
 		      {ec_classifier, start_link, []},
 		      permanent, 
 		      2000, 
 		      worker, 
 		      [ec_classifier]},
-    Children = [TrainingSup, TrainerServer, ClassifyServer],
+    Children = [TrainingSup, ClassifyServer],
     %% Restart: {How, Max, Within}
     %% production rule of thumb is 4 in 3600 = four per hour
     RestartStrategy = {one_for_one, 0, 1},
