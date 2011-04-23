@@ -25,9 +25,7 @@
 %% only danish is supported for this version.
 %%--------------------------------------------------------------------
 features(danish, Document) when is_binary(Document) ->
-    DP = ec_document_processing:remove_punctuation(Document),
-    DN = ec_document_processing:normalize_whitespace(DP),
-    Low = ec_document_processing:to_lowercase(DN),
+    Low = ec_document_processing:normalize(Document),
     Terms = ec_tokenizer:word_tokenize(Low),
     %% Filter for stopwords
     NonStopTerms = [ ST || ST <- Terms,  not ec_stopwords:is_stopword(danish, ST)],
