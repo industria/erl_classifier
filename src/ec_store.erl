@@ -8,12 +8,13 @@
 -module(ec_store).
 
 %% API
--export([init_tables/0, delete_tables/0, add_document/2, term/1, term_id/1,
+-export([init_tables/0, delete_tables/0, add_document/2, term/1, 
 	 term_frequency/1, term_class_frequency/2, update_term_class_frequency/3,
 	 classes/0, ndocuments/0, ndocuments_in_class/1]).
 
+%% Final exports are collected below in one export of each area
 -export([stopword_update/0, is_stopword/2]).
-
+-export([term_id/1, new_term/1]).
 
 -record(ids, {table, id}).
 
@@ -67,6 +68,32 @@ stopword_update() ->
 		end, Terms)
       end, StopwordLists),
     ok.
+
+
+%%--------------------------------------------------------------------
+%% Function: term_id(Term) -> {ok, TermId} | unknown
+%% Description: Lookup the id of a term.
+%%--------------------------------------------------------------------
+term_id(Term) when is_binary(Term) ->
+    case mnesia:dirty_read({terms, Term}) of
+	[Terms] -> 
+	    {ok, Terms#terms.term_id};
+	_ -> 
+	    unknown
+    end.
+
+%%--------------------------------------------------------------------
+%% Function: new_term(Term) -> {ok, TermId}
+%% Description: Add a new term to the vocabulary.
+%%--------------------------------------------------------------------
+new_term(Term) when is_binary(Term) ->
+    TermId = mnesia:dirty_update_counter({ids, term_id}, 1),
+    TermRecord = #terms{term = Term, term_id = TermId},
+    mnesia:dirty_write(TermRecord),
+    {ok, TermId}.
+
+    
+
 
 %%--------------------------------------------------------------------
 %% Function: 
@@ -157,13 +184,6 @@ term(Term) ->
     end.
 
 
-term_id(Term) when is_binary(Term) ->
-    case mnesia:dirty_read({terms, Term}) of
-	[Terms] -> 
-	    Terms#terms.term_id;
-	_ -> 
-	    -1
-    end.
     
 term_frequency(TermId) when is_integer(TermId) ->
     case mnesia:dirty_read({term_frequency, TermId}) of

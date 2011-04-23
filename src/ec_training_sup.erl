@@ -64,10 +64,18 @@ init(Classes) ->
 			 },
 		 [Child | Children]
     end,
-
     ClassTrainerChildren = lists:foldl(CB, [], Classes),
+
+    TermManagerChild = {ec_term_manager, 
+			{ec_term_manager, start_link, []},
+			permanent,
+			2000,
+			worker,
+			[ec_term_manager]
+		       },
+    ChildrenToStart = [TermManagerChild | ClassTrainerChildren],
     %% TODO: Remember to update the restart strategy 4, 3600
-    {ok,{{one_for_all,0,1}, ClassTrainerChildren}}.
+    {ok,{{one_for_all,0,1}, ChildrenToStart}}.
 
 %%====================================================================
 %% Internal functions
