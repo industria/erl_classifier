@@ -15,20 +15,31 @@
 %% Final exports are collected below in one export of each area
 -export([stopword_update/0, is_stopword/2]).
 -export([term_id/1, new_term/1]).
+-export([doc_freq_update/2]).
+-export([term_freq_update/3]).
+
 
 -record(ids, {table, id}).
 
 -record(terms, {term, term_id}).
 
--record(term_class_frequency, {class_term_id, count}).
+-record(term_class_frequency, {class_term_id, count}). %% Will be obsolete
 
--record(document_class_frequency, {class, count}).
+-record(document_class_frequency, {class, count}). %% Will be obsolete
 
--record(term_frequency, {term_id, count}).
+%% Contain document counts for a class
+%% match_count + complement_count is the total number of documents
+%% for a class
+-record(doc_class_freq, {class, match_count, complement_count}).
 
--record(stopwords, {language_term, dummy = unused}).
+-record(term_frequency, {term_id, count}). %% Will be obsolete
+
+
+-record(term_class_freq, {term_class, match_count, complement_count}).
+
 %% Mnesia tables must have at least one extra attribute in addition
 %% to the key, hence the dummy attribute in the record definition.
+-record(stopwords, {language_term, dummy = unused}).
 
 %%====================================================================
 %% API
@@ -92,8 +103,70 @@ new_term(Term) when is_binary(Term) ->
     mnesia:dirty_write(TermRecord),
     {ok, TermId}.
 
-    
 
+
+%%--------------------------------------------------------------------
+%% Function: doc_freq_update(Class, Match) -> ok
+%% Description: Update the document frequency for a given class.
+%% Match is a boolean indicating class match or class complement.
+%%--------------------------------------------------------------------
+doc_freq_update(Class, Match) ->
+    R = case mnesia:dirty_read(doc_class_freq, Class) of
+	    [DCF] ->
+		update_doc_freq(DCF, Match);
+	    _ ->
+		new_doc_freq(Class, Match)
+    end,
+    mnesia:dirty_write(doc_class_freq, R).
+
+
+new_doc_freq(Class, true) ->
+    #doc_class_freq{class = Class, match_count = 1, complement_count = 0};
+new_doc_freq(Class, false) ->
+    #doc_class_freq{class = Class, match_count = 0, complement_count = 1}.
+
+update_doc_freq(DF, true) ->
+    C = DF#doc_class_freq.match_count + 1,
+    DF#doc_class_freq{match_count = C};
+update_doc_freq(DF, false) ->
+    C = DF#doc_class_freq.complement_count + 1,
+    DF#doc_class_freq{complement_count = C}.
+
+
+%%--------------------------------------------------------------------
+%% Function: Term_freq_update(Class, Match, FreqDist) -> ok
+%% Description: Update the term frequency for a given class.
+%% Match is a boolean indicating class match or class complement.
+%%--------------------------------------------------------------------
+term_freq_update(Class, Match, FreqDist) ->
+    lists:foreach(
+      fun({TermId, Count}) ->
+	      Key = {Class, TermId},
+	      R = case mnesia:dirty_read(term_class_freq, Key) of
+		      [TCF] ->
+			  update_term_freq(TCF, Count, Match);
+		      _ ->
+			  new_term_freq(Key, Count, Match)
+		  end,
+	      mnesia:dirty_write(term_class_freq, R)
+      end, FreqDist),
+    ok.
+
+new_term_freq(ClassTerm, Count, true) ->
+    #term_class_freq{term_class = ClassTerm, 
+		     match_count = Count,
+		     complement_count = 0};
+new_term_freq(ClassTerm, Count, false) ->
+    #term_class_freq{term_class = ClassTerm,
+		     match_count = 0,
+		     complement_count = Count}.
+
+update_term_freq(TF, Count, true) ->    
+    C = TF#term_class_freq.match_count + Count,
+    TF#term_class_freq{match_count = C};
+update_term_freq(TF, Count, false) ->
+    C = TF#term_class_freq.complement_count + Count,
+    TF#term_class_freq{complement_count = C}.
 
 %%--------------------------------------------------------------------
 %% Function: 
@@ -105,9 +178,11 @@ init_tables() ->
 delete_tables() ->
     mnesia:delete_table(ids),
     mnesia:delete_table(terms),
-    mnesia:delete_table(term_frequency),
-    mnesia:delete_table(term_class_frequency),
-    mnesia:delete_table(document_class_frequency),
+    mnesia:delete_table(term_frequency),  %% Will be obsolete
+    mnesia:delete_table(term_class_frequency),  %% Will be obsolete
+    mnesia:delete_table(document_class_frequency), %% Will be obsolete
+    mnesia:delete_table(doc_class_freq),
+    mnesia:delete_table(term_class_freq),
     mnesia:delete_table(stopwords).
 
 
@@ -251,20 +326,35 @@ create_tables() ->
 			 {disc_copies, [node()]},
 			 {attributes, record_info(fields, terms)}
 			]),
+%% Will be obsolete
     mnesia:create_table(term_frequency, 
 			[{type, set},
 			 {disc_copies, [node()]},
 			 {attributes, record_info(fields, term_frequency)}
 			]),
+%% Will be obsolete
     mnesia:create_table(term_class_frequency, 
 			[{type, set},
 			 {disc_copies, [node()]},
 			 {attributes, record_info(fields, term_class_frequency)}
 			]),
+%% Will be obsolete
     mnesia:create_table(document_class_frequency, 
 			[{type, set},
 			 {disc_copies, [node()]},
 			 {attributes, record_info(fields, document_class_frequency)}
+			]),
+
+    mnesia:create_table(doc_class_freq, 
+			[{type, set},
+			 {disc_copies, [node()]},
+			 {attributes, record_info(fields, doc_class_freq)}
+			]),
+
+    mnesia:create_table(term_class_freq, 
+			[{type, set},
+			 {disc_copies, [node()]},
+			 {attributes, record_info(fields, term_class_freq)}
 			]),
     mnesia:create_table(stopwords, 
 			[{type, set},

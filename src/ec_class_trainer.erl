@@ -10,7 +10,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/2]).
+-export([start_link/2, update_with_document/3]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -22,17 +22,15 @@
 %% API
 %%====================================================================
 
-add_document(SpecId, Classes, Document) ->
-    ok.
-
-
+update_with_document(SpecId, Classes, Document) ->
+    gen_server:cast(SpecId, {update_with_document, Classes, Document}).
 
 %%--------------------------------------------------------------------
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
 start_link(SpecId, Class) ->
-    gen_server:start_link({local, SpecId}, ?MODULE, [Class], []).
+    gen_server:start_link({local, SpecId}, ?MODULE, Class, []).
 
 %%====================================================================
 %% gen_server callbacks
@@ -68,7 +66,16 @@ handle_call(_Request, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
-handle_cast(_Msg, State) ->
+handle_cast({update_with_document, Classes, Document}, State) ->
+    %% 1) Is this document a positiv match for the classifier
+    Match = lists:any(
+	      fun(Class) ->
+		      Class =:= State#state.class
+	      end, Classes),
+    %% 2) Update document class count
+    ec_store:doc_freq_update(State#state.class, Match),
+    %% 3) Update class term counts
+    ec_store:term_freq_update(State#state.class, Match, Document),
     {noreply, State}.
 
 %%--------------------------------------------------------------------
