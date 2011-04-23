@@ -18,6 +18,19 @@
 %% API
 %%====================================================================
 %%--------------------------------------------------------------------
+%% Function: normalize(Document) -> Document
+%% Description: Basically runs the document procssing chain 
+%% remove_punctuation -> normalize_whitespace -> to_lowercase
+%% but implements it as a one pass, instead of three
+%%--------------------------------------------------------------------
+normalize(Document) when is_binary(Document) ->
+    << 
+       <<(
+	   string:to_lower(normalize_whitespace_character(X)) 
+	 )/utf8>> 
+       || <<X/utf8>> <= Document, not punctuation(<<X>>) 
+    >>.
+%%--------------------------------------------------------------------
 %% Function: remove_punctuation(Document) -> Document
 %% Description: Remove the punctuation from the input Document
 %% Punctuation is defined as: !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
@@ -57,6 +70,12 @@ normalize_whitespace_character(X) ->
 %% Testing
 %%====================================================================
 -ifdef(TEST).
+
+normalize_test() ->
+    Doc = <<"Remove, the.\tpunctuation TOLOWER \x{C6}bler"/utf8>>,
+    Expected = <<"remove the punctuation tolower \x{E6}bler"/utf8>>,
+    ?assertEqual(Expected, normalize(Doc)).
+
 
 remove_punctuation_test() ->
     Doc = <<"Remove, the. punctuation"/utf8>>,
