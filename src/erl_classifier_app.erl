@@ -25,8 +25,10 @@
 %% OTP design principles as a supervision tree, this means starting the
 %% top supervisor of the tree.
 %%--------------------------------------------------------------------
-start(_Type, _StartArgs) ->
-    case erl_classifier_sup:start_link() of
+start(_Type, StartArgs) ->
+    {classes, Classes} = lists:keyfind(classes, 1, StartArgs),
+
+    case erl_classifier_sup:start_link(Classes) of
 	{ok, Pid} -> 
 	    {ok, Pid};
 	Other ->

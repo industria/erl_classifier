@@ -10,7 +10,7 @@
 -behaviour(supervisor).
 
 %% API
--export([start_link/0]).
+-export([start_link/1]).
 
 %% Supervisor callbacks
 -export([init/1]).
@@ -24,8 +24,8 @@
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the supervisor
 %%--------------------------------------------------------------------
-start_link() ->
-    supervisor:start_link({local, ?SERVER}, ?MODULE, []).
+start_link(Classes) ->
+    supervisor:start_link({local, ?SERVER}, ?MODULE, Classes).
 
 %%====================================================================
 %% Supervisor callbacks
@@ -39,7 +39,7 @@ start_link() ->
 %% to find out about restart strategy, maximum restart frequency and child 
 %% specifications.
 %%--------------------------------------------------------------------
-init([]) ->
+init(Classes) ->
     %% Child specification is a tuple like:
     %% {ID, Start, Restart, Shutdown, Type, Modules}
     %% ID : identified the specification internally
@@ -50,7 +50,7 @@ init([]) ->
     %% Modules: The modules the process depends on (for hot code upgrades)
 
     TrainingSup = {ec_training_sup,
-		   {ec_training_sup, start_link, []},
+		   {ec_training_sup, start_link, [ Classes ]},
 		   permanent,
 		   infinity,
 		   supervisor,

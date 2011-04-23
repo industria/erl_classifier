@@ -12,7 +12,7 @@
 -behaviour(supervisor).
 
 %% API
--export([start_link/0]).
+-export([start_link/1]).
 
 %% Supervisor callbacks
 -export([init/1]).
@@ -26,8 +26,8 @@
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the supervisor
 %%--------------------------------------------------------------------
-start_link() ->
-    supervisor:start_link({local, ?SERVER}, ?MODULE, [f1, cykling, fodbold]).
+start_link(Classes) ->
+    supervisor:start_link({local, ?SERVER}, ?MODULE, Classes).
 
 %%====================================================================
 %% Supervisor callbacks

@@ -11,6 +11,8 @@
   {registered, []},
 %%  {applications, [kernel, sasl, stdlib, mnesia]},
   {applications, [kernel, stdlib, mnesia]},
-  {mod, {erl_classifier_app, []}}
+  %% mod is : { module, one-start argument}
+  %% Here we supply a list of tagged tuples (only on item classes for now)
+  {mod, {erl_classifier_app, [{classes, [f1, cykling, fodbold]}] }}
  ]}.
 
