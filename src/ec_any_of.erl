@@ -1,23 +1,24 @@
 %%%-------------------------------------------------------------------
-%%% File    : ec_classifier.erl
+%%% File    : ec_any_of.erl
 %%% Author  : James Lindstorff <james@ind-w510>
-%%% Description : Classifier - classify documents
-%%% These servers are started dynamically from the launcher supervisor.
+%%% Description : Any-of coordinating process.
+%%% It does initial document processing and coordinates the classification
+%%% using processes launched through ec_classifier_launcher_sup.
 %%%
-%%% Created :  5 Apr 2011 by James Lindstorff <james@ind-w510>
+%%% Created : 23 Apr 2011 by James Lindstorff <james@ind-w510>
 %%%-------------------------------------------------------------------
--module(ec_classifier).
+-module(ec_any_of).
 
 -behaviour(gen_server).
 
 %% API
--export([start_link/0, stop/1, classify/3]).
+-export([start_link/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
--record(state, {}).
+-record(state, {classes}).
 
 %%====================================================================
 %% API
@@ -26,18 +27,8 @@
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
-start_link() ->
-    gen_server:start_link(?MODULE, [], []).
-
-stop(Pid) ->
-    gen_server:cast(Pid, delete).
-
-%%--------------------------------------------------------------------
-%% Function: classify(Document) -> [ {atom(), measure} ] 
-%% Description: Get a list of classes and measure for the document.
-%%--------------------------------------------------------------------
-classify(Pid, Class, Document) when is_pid(Pid), is_atom(Class), is_binary(Document) ->
-    gen_server:call(Pid, {classify, Class, Document}).
+start_link(Classes) ->
+    gen_server:start_link(?MODULE, [ Classes ], []).
 
 %%====================================================================
 %% gen_server callbacks
@@ -50,8 +41,8 @@ classify(Pid, Class, Document) when is_pid(Pid), is_atom(Class), is_binary(Docum
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init([]) ->
-    {ok, #state{}}.
+init([ Classes ]) ->
+    {ok, #state{classes = Classes}}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -62,31 +53,8 @@ init([]) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
-handle_call({classify, XClass, Document}, _From, State) ->
-    FD = ec_feature_extraction:features(danish, Document),
-    Classes = ec_store:classes(),
-    B = length(Classes), %% number of classes
-    Ndocs = ec_store:ndocuments(),
-    CP = lists:foldl(fun(Class, AccIn) ->
-			     Nc = ec_store:ndocuments_in_class(Class),
-			     Pc = Nc / Ndocs,
-			     %% Term_in_class / Term_in_all_classes
-			     Ptc = lists:foldl(fun({Term, TermCount}, TAccIn) ->
-						       TermId = ec_store:term_id(Term),
-						       Tct = ec_store:term_class_frequency(TermId, Class),
-						       Tctm = ec_store:term_frequency(TermId),
-						       Pcd = (Tct + 1) / (Tctm + B),
-						       %% The pow is used because the document
-						       %% is represented by a frequency 
-						       %% distribution and not just a vector
-						       %% with duplicates
-						       PcdTimes = math:pow(Pcd, TermCount),
-						       TAccIn * PcdTimes
-					       end, 1, FD),
-			     Pcd = Pc * Ptc,
-			     [{Class, Pc, Ptc, Pcd} | AccIn]
-		     end, [], Classes),
-    Reply = CP,
+handle_call(_Request, _From, State) ->
+    Reply = ok,
     {reply, Reply, State}.
 
 %%--------------------------------------------------------------------
@@ -95,10 +63,8 @@ handle_call({classify, XClass, Document}, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
-%%handle_cast(_Msg, State) ->
-%%    {noreply, State}.
-handle_cast(delete, State) ->
-    {stop, normal, State}.
+handle_cast(_Msg, State) ->
+    {noreply, State}.
 
 %%--------------------------------------------------------------------
 %% Function: handle_info(Info, State) -> {noreply, State} |
@@ -129,5 +95,3 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
-
-

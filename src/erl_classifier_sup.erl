@@ -56,13 +56,21 @@ init(Classes) ->
 		   supervisor,
 		   [ec_training_sup]},
 
-    ClassifyServer = {ec_classifier, 
-		      {ec_classifier, start_link, []},
-		      permanent, 
-		      2000, 
-		      worker, 
-		      [ec_classifier]},
-    Children = [TrainingSup, ClassifyServer],
+    AnyOfLauncher = {ec_any_of_sup,
+		     {ec_any_of_sup, start_link, [ Classes ]},
+		     permanent,
+		     infinity,
+		     supervisor,
+		     [ec_any_of_sup]},
+
+    ClassifyLauncher = {ec_classifier_launcher_sup,
+			{ec_classifier_launcher_sup, start_link, []},
+			permanent,
+			infinity,
+			supervisor,
+			[ec_classifier_launcher_sup]},
+
+    Children = [TrainingSup, AnyOfLauncher, ClassifyLauncher],
     %% Restart: {How, Max, Within}
     %% production rule of thumb is 4 in 3600 = four per hour
     RestartStrategy = {one_for_one, 0, 1},
