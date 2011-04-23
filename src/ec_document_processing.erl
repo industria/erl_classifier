@@ -12,7 +12,7 @@
 -endif.
 
 %% API
--export([remove_punctuation/1, normalize_whitespace/1, to_lowercase/1]).
+-export([normalize/1, remove_punctuation/1, normalize_whitespace/1, to_lowercase/1]).
 
 %%====================================================================
 %% API
