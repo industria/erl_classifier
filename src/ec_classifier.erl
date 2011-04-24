@@ -97,8 +97,31 @@ handle_call({classify, XClass, Document}, _From, State) ->
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
 handle_cast({classify, Class, Document, ReplyTo}, State) ->
-    Match = 0,
-    Complement = 0,
+    %% Calculate probability of c and ĉ occuring
+    %% Done by estimating the class document occurence p(c) = nc / n
+    {ok, DocsMatch, DocsComp} = ec_store:doc_freq(Class),
+    DocsTotal = DocsMatch + DocsComp,  %% Consider adding one to protect against unknown classes
+    Pc = DocsMatch / DocsTotal,
+    PcC = DocsComp / DocsTotal,
+    F = fun({TermId, TermCount}, {AccPtc, AccPtcC}) ->
+		{ok, Tct, TctC} = ec_store:term_freq(Class, TermId),
+		Tctm = Tct + TctC,
+		B = 3, %% TODO: Get real B
+		%% Documents are frequency distributions and not vectors
+		%% with duplicates so we raise the value to the count power
+		Pcd = math:pow((Tct + 1) / (Tctm + B), TermCount),
+		PcdC = math:pow((TctC + 1) / (Tctm + B), TermCount),
+		{AccPtc * Pcd, AccPtcC * PcdC}
+	end,
+    {Ptc, PtcC} = lists:foldl(F, {1, 1}, Document),
+    %%
+    Pcd = Pc * Ptc,
+    PcdC = PcC * PtcC,
+    
+
+
+    Match = Pcd,
+    Complement = PcdC,
     ec_any_of:result(ReplyTo, Class, Match, Complement),
     {noreply, State};
 handle_cast(stop, State) ->

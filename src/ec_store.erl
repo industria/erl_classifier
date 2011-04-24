@@ -17,8 +17,8 @@
 -export([term_id/1, new_term/1]).
 -export([doc_freq_update/2]).
 -export([term_freq_update/3]).
-
-
+-export([doc_freq/1]).
+-export([term_freq/2]).
 -record(ids, {table, id}).
 
 -record(terms, {term, term_id}).
@@ -167,6 +167,34 @@ update_term_freq(TF, Count, true) ->
 update_term_freq(TF, Count, false) ->
     C = TF#term_class_freq.complement_count + Count,
     TF#term_class_freq{complement_count = C}.
+
+
+%%--------------------------------------------------------------------
+%% Function: doc_freq(Class) -> {ok, Match, Complement} 
+%% Description: Get the document frequency for a class.
+%%--------------------------------------------------------------------
+doc_freq(Class) ->
+    case mnesia:dirty_read(doc_class_freq, Class) of
+	[Freq] ->
+	    {ok, Freq#doc_class_freq.match_count, Freq#doc_class_freq.complement_count};
+	_ ->
+	    {ok, 0, 0}
+    end.
+
+
+%%--------------------------------------------------------------------
+%% Function: term_freq(Class, TermId) -> {ok, Match, Complement} 
+%% Description: Get the term frequency for a class.
+%%--------------------------------------------------------------------
+term_freq(Class, TermId) ->
+%%-record(term_class_freq, {term_class, match_count, complement_count}).
+    case mnesia:dirty_read(term_class_freq, {Class, TermId}) of
+	[Freq] ->
+	    {ok, Freq#term_class_freq.match_count, Freq#term_class_freq.complement_count};
+	_ ->
+	    {ok, 0, 0}
+    end.
+
 
 %%--------------------------------------------------------------------
 %% Function: 
