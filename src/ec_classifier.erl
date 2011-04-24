@@ -38,7 +38,7 @@ stop(Pid) ->
 %%--------------------------------------------------------------------
 classify(Pid, Class, Document) ->
     ReplyTo = self(), %% The calling process (a ec_any_of process)
-    gen_server:cast(Pid, {classify, Class, Document, ReplyTo}).
+    gen_server:cast(Pid, {classify_log, Class, Document, ReplyTo}).
 
 %%====================================================================
 %% gen_server callbacks
@@ -73,7 +73,7 @@ handle_call(_Request, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
-handle_cast({classify, Class, Document, ReplyTo}, State) ->
+handle_cast({classify_log, Class, Document, ReplyTo}, State) ->
     %% Vocabulary size B
     {ok, B} = ec_store:vocabulary_size(),
     %% Calculate probability of c and ĉ occuring
@@ -91,15 +91,13 @@ handle_cast({classify, Class, Document, ReplyTo}, State) ->
 		%% B is vocabulary size
 		Pcd = math:pow((Tct + 1) / (Tctm + B), TermCount),
 		PcdC = math:pow((TctC + 1) / (Tctm + B), TermCount),
-		{AccPtc * Pcd, AccPtcC * PcdC}
+		{AccPtc + math:log(Pcd), AccPtcC + math:log(PcdC)}
 	end,
-    {Ptc, PtcC} = lists:foldl(F, {1, 1}, Document),
+    {Ptc, PtcC} = lists:foldl(F, {0, 0}, Document),
     %%
-    Pcd = Pc * Ptc,
-    PcdC = PcC * PtcC,
+    Pcd = math:log(Pc) + Ptc,
+    PcdC = math:log(PcC) + PtcC,
     
-
-
     Match = Pcd,
     Complement = PcdC,
     ec_any_of:result(ReplyTo, Class, Match, Complement),
