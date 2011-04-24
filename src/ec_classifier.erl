@@ -63,31 +63,8 @@ init([]) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
-handle_call({classify, XClass, Document}, _From, State) ->
-    FD = ec_feature_extraction:features(danish, Document),
-    Classes = ec_store:classes(),
-    B = length(Classes), %% number of classes
-    Ndocs = ec_store:ndocuments(),
-    CP = lists:foldl(fun(Class, AccIn) ->
-			     Nc = ec_store:ndocuments_in_class(Class),
-			     Pc = Nc / Ndocs,
-			     %% Term_in_class / Term_in_all_classes
-			     Ptc = lists:foldl(fun({Term, TermCount}, TAccIn) ->
-						       TermId = ec_store:term_id(Term),
-						       Tct = ec_store:term_class_frequency(TermId, Class),
-						       Tctm = ec_store:term_frequency(TermId),
-						       Pcd = (Tct + 1) / (Tctm + B),
-						       %% The pow is used because the document
-						       %% is represented by a frequency 
-						       %% distribution and not just a vector
-						       %% with duplicates
-						       PcdTimes = math:pow(Pcd, TermCount),
-						       TAccIn * PcdTimes
-					       end, 1, FD),
-			     Pcd = Pc * Ptc,
-			     [{Class, Pc, Ptc, Pcd} | AccIn]
-		     end, [], Classes),
-    Reply = CP,
+handle_call(_Request, _From, State) ->
+    Reply = ok,
     {reply, Reply, State}.
 
 %%--------------------------------------------------------------------
