@@ -97,6 +97,8 @@ handle_call({classify, XClass, Document}, _From, State) ->
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
 handle_cast({classify, Class, Document, ReplyTo}, State) ->
+    %% Vocabulary size B
+    {ok, B} = ec_store:vocabulary_size(),
     %% Calculate probability of c and ĉ occuring
     %% Done by estimating the class document occurence p(c) = nc / n
     {ok, DocsMatch, DocsComp} = ec_store:doc_freq(Class),
@@ -106,9 +108,10 @@ handle_cast({classify, Class, Document, ReplyTo}, State) ->
     F = fun({TermId, TermCount}, {AccPtc, AccPtcC}) ->
 		{ok, Tct, TctC} = ec_store:term_freq(Class, TermId),
 		Tctm = Tct + TctC,
-		B = 3, %% TODO: Get real B
 		%% Documents are frequency distributions and not vectors
 		%% with duplicates so we raise the value to the count power
+		%% 1 is added to compencate for training data sparseness
+		%% B is vocabulary size
 		Pcd = math:pow((Tct + 1) / (Tctm + B), TermCount),
 		PcdC = math:pow((TctC + 1) / (Tctm + B), TermCount),
 		{AccPtc * Pcd, AccPtcC * PcdC}
