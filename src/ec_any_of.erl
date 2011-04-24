@@ -12,13 +12,13 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/1]).
+-export([start_link/1, classify/1, result/4]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
--record(state, {classes}).
+-record(state, {classes, pidmap, results = [], deferredreplyclient}).
 
 %%====================================================================
 %% API
@@ -29,6 +29,29 @@
 %%--------------------------------------------------------------------
 start_link(Classes) ->
     gen_server:start_link(?MODULE, [ Classes ], []).
+
+
+classify(Document) ->
+    {ok, Pid} = ec_any_of_sup:start_child(),
+    R = try gen_server:call(Pid, {classify, Document}) of
+	Result ->
+		%% This contains the result of the classify call
+		{ok, Result}
+	catch
+	    exit:{timeout, _} ->
+		%% TODO: if any classifying processes is still
+		%% running they should be stopped from here.
+		fail_timeout
+	end,
+
+    %% Terminate the any_of process
+    gen_server:cast(Pid, stop),
+    R.
+
+result(Pid, Class, Match, Complement) ->
+    {ok, PidThatReplied} = gen_server:call(Pid, {result, Class, Match, Complement}),
+    ec_classifier:stop(PidThatReplied).
+
 
 %%====================================================================
 %% gen_server callbacks
@@ -53,6 +76,69 @@ init([ Classes ]) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
+handle_call({classify, Document}, From, State) ->
+    %% 1) Normalize from whitespace, punctuation and case
+    NormalizedDocument = ec_document_processing:normalize(Document),
+
+    %% 2) Get the document tokenized
+    Terms = ec_tokenizer:word_tokenize(NormalizedDocument),
+
+    %% 3) Remove stopwords from the list 
+    %% 4) Stem the words
+    Stemmed = [ ec_danish_stemmer:stem(T) || T <- Terms, not ec_stopwords:is_stopword(danish, T)],
+
+    %% 5) Get the tokens converted into term ids
+    TermIds = terms_to_ids(Stemmed),
+
+    %% 6) Create a frequency distribution
+    TFD = ec_frequency_distribution:create(TermIds),
+
+    %% Generate the N class classifiers
+    Launch = fun(Class, Acc) ->
+		     {ok, Pid} = ec_classifier_launcher_sup:start_child(),
+		     ec_classifier:classify(Pid, Class, TFD),
+		     dict:store(Pid, Class, Acc)
+	     end,
+    PidMap = lists:foldl(Launch, dict:new(), State#state.classes),
+    %% Register the pid map and the client for the deferred reply in the state
+
+    NewState = State#state{pidmap = PidMap,
+			   deferredreplyclient = From},
+    %% Deferred reply when the results are in we use gen_server:reply
+    %% waiting a maximum of 5 seconds for the replies
+    {noreply, NewState, 5000};
+
+handle_call({result, Class, Match, Complement}, From, State) ->
+    %% Map the caller (From) to the PidMap
+    {FromPid, _FromTag} = From,
+    PidMap = State#state.pidmap,
+    {ok, _Class} = dict:find(FromPid, PidMap),
+
+    %% Remove the pid mapping from the state (a zero length mapping means all have answered)
+    NewPidMap = dict:erase(FromPid, PidMap),
+
+    %% Add the recieved result to the process state
+    Results = State#state.results,
+    NewState = State#state{results = [{Class, Match, Complement} | Results],
+			   pidmap = NewPidMap},
+
+
+    %% Check if all processes has answered
+    case dict:size(NewPidMap) =:= 0 of
+	true ->
+	    Client = NewState#state.deferredreplyclient,
+	    ReplyResults = NewState#state.results,
+	    gen_server:reply(Client, ReplyResults),
+	    ok;
+	false ->
+	    ok
+    end,
+ 
+
+    %% Return the Pid from the state PidMap
+    Reply = {ok, FromPid},
+
+    {reply, Reply, NewState};
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -63,6 +149,8 @@ handle_call(_Request, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
+handle_cast(stop, State) ->
+        {stop, normal, State};
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
@@ -95,3 +183,15 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+
+
+terms_to_ids(Terms) ->
+    lists:foldl(fun term_to_id/2, [], Terms).
+
+term_to_id(Term, Ids) ->
+    case ec_store:term_id(Term) of
+	{ok, Id} ->
+	    [Id | Ids];
+	unknown ->
+	    [unknown | Ids]
+    end.

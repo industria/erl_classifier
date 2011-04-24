@@ -30,14 +30,15 @@ start_link() ->
     gen_server:start_link(?MODULE, [], []).
 
 stop(Pid) ->
-    gen_server:cast(Pid, delete).
+    gen_server:cast(Pid, stop).
 
 %%--------------------------------------------------------------------
 %% Function: classify(Document) -> [ {atom(), measure} ] 
 %% Description: Get a list of classes and measure for the document.
 %%--------------------------------------------------------------------
-classify(Pid, Class, Document) when is_pid(Pid), is_atom(Class), is_binary(Document) ->
-    gen_server:call(Pid, {classify, Class, Document}).
+classify(Pid, Class, Document) ->
+    ReplyTo = self(), %% The calling process (a ec_any_of process)
+    gen_server:cast(Pid, {classify, Class, Document, ReplyTo}).
 
 %%====================================================================
 %% gen_server callbacks
@@ -95,9 +96,12 @@ handle_call({classify, XClass, Document}, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
-%%handle_cast(_Msg, State) ->
-%%    {noreply, State}.
-handle_cast(delete, State) ->
+handle_cast({classify, Class, Document, ReplyTo}, State) ->
+    Match = 0,
+    Complement = 0,
+    ec_any_of:result(ReplyTo, Class, Match, Complement),
+    {noreply, State};
+handle_cast(stop, State) ->
     {stop, normal, State}.
 
 %%--------------------------------------------------------------------

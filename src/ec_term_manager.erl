@@ -37,6 +37,7 @@ update(Terms) when is_list(Terms) ->
     gen_server:call(?SERVER, {update_list, Terms}).
 	    
 
+
 %%--------------------------------------------------------------------
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
