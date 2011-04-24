@@ -12,7 +12,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/1, classify/1, result/4]).
+-export([start_link/1, classify/1, classify_detail/1, result/4]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -32,15 +32,20 @@ start_link(Classes) ->
 
 
 classify(Document) ->
+    {ok, Result, Classes} = classify_detail(Document),
+    Classes.
+
+classify_detail(Document) ->
     {ok, Pid} = ec_any_of_sup:start_child(),
     R = try gen_server:call(Pid, {classify, Document}) of
 	Result ->
 		%% This contains the result of the classify call
-		{ok, Result}
+		Classes = classes_from_classifications(Result),
+		{ok, Result, Classes}
 	catch
 	    exit:{timeout, _} ->
 		%% TODO: if any classifying processes is still
-		%% running they should be stopped from here.
+		%% running they should be stopped
 		fail_timeout
 	end,
 
@@ -184,7 +189,6 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 
-
 terms_to_ids(Terms) ->
     lists:foldl(fun term_to_id/2, [], Terms).
 
@@ -195,3 +199,15 @@ term_to_id(Term, Ids) ->
 	unknown ->
 	    [unknown | Ids]
     end.
+
+
+classes_from_classifications(Classifications) ->
+    lists:foldl(
+      fun({Class, Match, Complement}, Classes) ->
+	      if
+		  Match > Complement ->
+		      [Class | Classes];
+		  true ->
+		      Classes
+	      end
+      end, [], Classifications).
