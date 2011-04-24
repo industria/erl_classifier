@@ -16,7 +16,7 @@
 -export([doc_freq_update/2]).
 -export([term_freq_update/3]).
 -export([doc_freq/1]).
--export([term_freq/2]).
+-export([term_freq/2, vocabulary_size/0]).
 -record(ids, {table, id}).
 
 -record(terms, {term, term_id}).
@@ -186,6 +186,16 @@ term_freq(Class, TermId) ->
 	    {ok, 0, 0}
     end.
 
+
+%%--------------------------------------------------------------------
+%% Function: vocabulary_size() -> {ok, Count} 
+%% Description: Get vocabulary size.
+%% Vocabulary size is the size of the terms table because all 
+%% two-class classifiers see all terms as either match or complement.
+%%--------------------------------------------------------------------
+vocabulary_size() ->
+    S = mnesia:table_info(terms, size),
+    {ok, S}.
 
 %%--------------------------------------------------------------------
 %% Function: 
