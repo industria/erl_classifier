@@ -76,12 +76,15 @@ handle_call(_Request, _From, State) ->
 handle_cast({classify_log, Class, Document, ReplyTo}, State) ->
     %% Vocabulary size B
     {ok, B} = ec_store:vocabulary_size(),
-    %% Calculate probability of c and ĉ occuring
-    %% Done by estimating the class document occurence p(c) = nc / n
+    %% Probability of class and ^class occuring is 
+    %% estimated by class document occurence p(c) = nc / n
     {ok, DocsMatch, DocsComp} = ec_store:doc_freq(Class),
-    DocsTotal = DocsMatch + DocsComp,  %% Consider adding one to protect against unknown classes
+    DocsTotal = DocsMatch + DocsComp, 
     Pc = DocsMatch / DocsTotal,
     PcC = DocsComp / DocsTotal,
+    %% Function for calculating 
+    %% P(t|c)  : Propability of term given class (Match)
+    %% P(t|^c) : Probability of term given ^class (Complement)
     F = fun({TermId, TermCount}, {AccPtc, AccPtcC}) ->
 		{ok, Tct, TctC} = ec_store:term_freq(Class, TermId),
 		Tctm = Tct + TctC,
@@ -94,13 +97,12 @@ handle_cast({classify_log, Class, Document, ReplyTo}, State) ->
 		{AccPtc + math:log(Pcd), AccPtcC + math:log(PcdC)}
 	end,
     {Ptc, PtcC} = lists:foldl(F, {0, 0}, Document),
-    %%
-    Pcd = math:log(Pc) + Ptc,
-    PcdC = math:log(PcC) + PtcC,
+    %% P(c|d) : Probability of class given document (Match)
+    Pcd = math:log(Pc) + Ptc,    
+    %% P(^c|d) : Probalility of ^class given document (Complement)
+    PcdC = math:log(PcC) + PtcC, 
     
-    Match = Pcd,
-    Complement = PcdC,
-    ec_any_of:result(ReplyTo, Class, Match, Complement),
+    ec_any_of:result(ReplyTo, Class, Pcd, PcdC),
     {noreply, State};
 handle_cast(stop, State) ->
     {stop, normal, State}.
