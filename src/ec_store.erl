@@ -197,15 +197,24 @@ term_freq(Class, TermId) ->
 %% activated.
 %%--------------------------------------------------------------------
 vocabulary_size(Class) ->
-     F = fun(Record,  {M, C}) ->
-		 { M + Record#term_class_freq.match_count, 
-		   C + Record#term_class_freq.complement_count
-		 }
-	 end,
-    L = mnesia:dirty_index_read(term_class_freq, Class, #term_class_freq.class),
-    {Match, Complement} = lists:foldl(F, {0, 0}, L),
-    {ok, Match, Complement}.
+    Key = mnesia:dirty_first(term_class_freq),
+    vocabulary_size_record(Key, Class, 0, 0).
 
+vocabulary_size_record('$end_of_table', _Class, Match, Complement) ->
+    {ok, Match, Complement};
+vocabulary_size_record(Key, Class, Match, Complement) ->
+    [R] = mnesia:dirty_read(term_class_freq, Key),
+    case R#term_class_freq.class of
+	Class ->
+	    NewMatch = Match + R#term_class_freq.match_count,
+	    NewComplement = Complement + R#term_class_freq.complement_count,
+	    NewKey = mnesia:dirty_next(term_class_freq, Key),
+	    vocabulary_size_record(NewKey, Class, NewMatch, NewComplement);
+	_ ->
+	    NextKey = mnesia:dirty_next(term_class_freq, Key),
+	    vocabulary_size_record(NextKey, Class, Match, Complement)
+    end.
+			  
 %%--------------------------------------------------------------------
 %% Function: vocabulary_size() -> {ok, Count} 
 %% Description: Get vocabulary size.
