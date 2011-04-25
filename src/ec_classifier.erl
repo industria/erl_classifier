@@ -79,28 +79,36 @@ handle_cast({classify_log, Class, Document, ReplyTo}, State) ->
     %% Probability of class and ^class occuring is 
     %% estimated by class document occurence p(c) = nc / n
     {ok, DocsMatch, DocsComp} = ec_store:doc_freq(Class),
-    DocsTotal = DocsMatch + DocsComp, 
+    DocsTotal = DocsMatch + DocsComp,
+    %% P(c)  : Probability of class (Match)
     Pc = DocsMatch / DocsTotal,
+    %% P(^c) : Probability of ^class (Complement)
     PcC = DocsComp / DocsTotal,
     %% Function for calculating 
     %% P(t|c)  : Propability of term given class (Match)
     %% P(t|^c) : Probability of term given ^class (Complement)
+    %% For each term in the document
     F = fun({TermId, TermCount}, {AccPtc, AccPtcC}) ->
+		%% Term occurence in training documents for class and ^class
 		{ok, Tct, TctC} = ec_store:term_freq(Class, TermId),
+		%% Total number of term occurences for class.
+		%% This is the same for class and ^class because all terms
+		%% are added to all two-class classifiers during training.
+		%% NOTE THIS IS A WRONG ASSUMPTION!!!!!!!!
 		Tctm = Tct + TctC,
-		%% Documents are frequency distributions and not vectors
-		%% with duplicates so we raise the value to the count power
+		%% Documents are frequency distributions so log(P(t|c))
+		%% needs to be multiplied by the term count.
 		%% 1 is added to compencate for training data sparseness
 		%% B is vocabulary size
-		Pcd = math:pow((Tct + 1) / (Tctm + B), TermCount),
-		PcdC = math:pow((TctC + 1) / (Tctm + B), TermCount),
-		{AccPtc + math:log(Pcd), AccPtcC + math:log(PcdC)}
+		Ptc = math:log((Tct + 1) / (Tctm + B)) * TermCount,
+		PtcC = math:log((TctC + 1) / (Tctm + B)) * TermCount,
+		{AccPtc + Ptc, AccPtcC + PtcC}
 	end,
-    {Ptc, PtcC} = lists:foldl(F, {0, 0}, Document),
+    {SumPtc, SumPtcC} = lists:foldl(F, {0, 0}, Document),
     %% P(c|d) : Probability of class given document (Match)
-    Pcd = math:log(Pc) + Ptc,    
+    Pcd = math:log(Pc) + SumPtc,    
     %% P(^c|d) : Probalility of ^class given document (Complement)
-    PcdC = math:log(PcC) + PtcC, 
+    PcdC = math:log(PcC) + SumPtcC, 
     
     ec_any_of:result(ReplyTo, Class, Pcd, PcdC),
     {noreply, State};
