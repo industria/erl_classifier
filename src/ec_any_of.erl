@@ -32,7 +32,7 @@ start_link(Classes) ->
 
 
 classify(Document) ->
-    {ok, Result, Classes} = classify_detail(Document),
+    {ok, _Result, Classes} = classify_detail(Document),
     Classes.
 
 classify_detail(Document) ->
@@ -40,7 +40,10 @@ classify_detail(Document) ->
     R = try gen_server:call(Pid, {classify, Document}) of
 	Result ->
 		%% This contains the result of the classify call
-		Classes = classes_from_classifications(Result),
+		Classes = [ Class || 
+			      {Class, Match, Complement} <- Result,
+			      (Match > Complement) 
+			  ],
 		{ok, Result, Classes}
 	catch
 	    exit:{timeout, _} ->
@@ -200,14 +203,3 @@ term_to_id(Term, Ids) ->
 	    [unknown | Ids]
     end.
 
-
-classes_from_classifications(Classifications) ->
-    lists:foldl(
-      fun({Class, Match, Complement}, Classes) ->
-	      if
-		  Match > Complement ->
-		      [Class | Classes];
-		  true ->
-		      Classes
-	      end
-      end, [], Classifications).
