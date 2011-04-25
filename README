@@ -1,6 +1,6 @@
 Naive Bayes classifier in Erlang
 
-The classifier can be used to solv any-of classifications using the aproach of 
+The classifier can be used to solve any-of classifications using the aproach of 
 N two-class classifiers one for each class. Classification in the classifiers
 will therefore be classification for class c or it's complement ĉ. 
 
