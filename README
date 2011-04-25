@@ -37,5 +37,5 @@ To startup after the mnesia datastore has been initialized:
 
 Classifying a document after the above storage initialization:
 
--- ec_classifier:classify(<<"you text in danish"/utf8>>).
+-- ec_classifier:classify(<<"your text in danish"/utf8>>).
 
