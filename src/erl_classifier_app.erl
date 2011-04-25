@@ -30,6 +30,8 @@ start(_Type, StartArgs) ->
 
     case erl_classifier_sup:start_link(Classes) of
 	{ok, Pid} -> 
+	    %% Attach the classification event handler
+	    ec_handler_classifier:add_handler(),
 	    {ok, Pid};
 	Other ->
 	    {error, Other}

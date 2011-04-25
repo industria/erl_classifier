@@ -74,6 +74,9 @@ handle_call(_Request, _From, State) ->
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
 handle_cast({classify_log, Class, Document, ReplyTo}, State) ->
+    %% Timing instrumentation
+    Inst_Start = now(),
+
     %% Probability of class and ^class occuring is 
     %% estimated by class document occurence p(c) = nc / n
     {ok, DocsMatch, DocsComp} = ec_store:doc_freq(Class),
@@ -105,8 +108,12 @@ handle_cast({classify_log, Class, Document, ReplyTo}, State) ->
     %% P(c|d) : Probability of class given document (Match)
     Pcd = math:log(Pc) + SumPtc,    
     %% P(^c|d) : Probalility of ^class given document (Complement)
-    PcdC = math:log(PcC) + SumPtcC, 
-    
+    PcdC = math:log(PcC) + SumPtcC,
+
+    %% Calculate time use and post event
+    Inst_MicroSeconds = timer:now_diff(now(), Inst_Start),
+    ec_event_classifier:stat_time(Inst_MicroSeconds),
+
     ec_any_of:result(ReplyTo, Class, Pcd, PcdC),
     {noreply, State};
 handle_cast(stop, State) ->

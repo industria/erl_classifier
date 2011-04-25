@@ -49,6 +49,13 @@ init(Classes) ->
     %% Type: Process type, supervisor or worker
     %% Modules: The modules the process depends on (for hot code upgrades)
 
+    ClassifingEventManager = {ec_event_classifier,
+			      {ec_event_classifier, start_link, []},
+			      permanent,
+			      2000,
+			      worker,
+			      [ec_event_classifier]},
+
     TrainingSup = {ec_training_sup,
 		   {ec_training_sup, start_link, [ Classes ]},
 		   permanent,
@@ -70,7 +77,11 @@ init(Classes) ->
 			supervisor,
 			[ec_classifier_launcher_sup]},
 
-    Children = [TrainingSup, AnyOfLauncher, ClassifyLauncher],
+    Children = [ClassifingEventManager,
+		TrainingSup, 
+		AnyOfLauncher, 
+		ClassifyLauncher],
+
     %% Restart: {How, Max, Within}
     %% production rule of thumb is 4 in 3600 = four per hour
     RestartStrategy = {one_for_one, 0, 1},
