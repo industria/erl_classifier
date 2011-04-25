@@ -5,6 +5,33 @@
 %%% It does initial document processing and coordinates the classification
 %%% using processes launched through ec_classifier_launcher_sup.
 %%%
+%%% Classification works by the following protocol:
+%%% 1) An any-of process (this module) is lunched and a blocking call
+%%%    is made to classify a document.
+%%% 2) This process, does initial document processing, so the document
+%%%    is represented by a term id frequency distribution.
+%%% 3) After initial processing, this process starts N classifiers, 
+%%%    N being the number of two-class classifiers defined during
+%%%    startup and calls each of them asynchronously.
+%%% 4) After the classifiers has been launched a class to classifier
+%%%    Pid map is stored in state. The reply send is a noreply 
+%%%    with a 5 second timeout to allow for a deferred reply, when the
+%%%    classifiers just launched has finished their job. The caller 
+%%%    remains blocked for 5 seconds on the gen_server:call.
+%%% 5) While the caller is blocked the classifiers will start
+%%%    calling the result function, which will register the result
+%%%    in state and remove the Pid, that send the result, from
+%%%    the class to classifier Pid map generated earlier. After the
+%%%    result function the classifier called in this module will
+%%%    send a stop message to the classifier process, effectivly 
+%%%    terminating it after job done.
+%%% 6) Classification of a document is finished, when the result 
+%%%    function have been called for all the classifiers started,
+%%%    which is triggered by the class to classifier Pid map being
+%%%    empty, at which point the actual reply, which was previously 
+%%%    deferred, will be performed with the result from state being
+%%%    the reply.
+%%%
 %%% Created : 23 Apr 2011 by James Lindstorff <james@ind-w510>
 %%%-------------------------------------------------------------------
 -module(ec_any_of).
