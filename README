@@ -1,10 +1,7 @@
 Naive Bayes classifier in Erlang
 
 The classifier can be used to solve any-of classifications using the aproach of 
-N two-class classifiers one for each class. Classification in the classifiers
-will therefore be classification for class c or it's complement ĉ. 
-
-
+N two-class classifiers.
 
 
 Note: All files are expected to be UTF8 encoded.
@@ -15,25 +12,28 @@ Stop word lists:
 
      - Are kept in priv/stopwords/
      - Must be named lang.stopwords, where lang is the language of the stop words in the file.
-     - Avoid multiple . in the filenames because only the first part up to the first . will be extracted as the language.
-     - Generelly not much checking is done on the filenames and their content.
+
+
 
 Setting up the mnesia datastore:
 
--- make console
--- mnesia:create_schema([node()]).
--- mnesia:start().
--- application:start(erl_classifier).
--- ec_store:init_tables().
--- ec_sport_demo:train().
+1) Setting up the schema
+   make console
+   > mnesia:stop().
+   > mnesia:create_schema([node()]).
+   > ctrl-g q -- to stop the shell
+
+2) Setting up tables with the sport demo data
+   make console
+   > ec_store:init_tables().
+   > ec_store:stopword_update().
+   > ec_sport_demo:train().
+   > ec_store:change_to_disc_copies().
+ 
 
 To startup after the mnesia datastore has been initialized:
 
 -- make console
--- mnesia:start().
--- application:start(erl_classifier).
-
-
 
 Classifying a document after the above storage initialization:
 

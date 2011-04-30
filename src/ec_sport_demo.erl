@@ -20,7 +20,6 @@
 %% Description:
 %%--------------------------------------------------------------------
 train() ->
-    timer:start(),
     {ok, Files} = file:list_dir(?DOCPATH),
     lists:foreach(fun(File) ->
 			 [Prefix | Number] = string:tokens(File, "_"),
@@ -32,8 +31,7 @@ train() ->
 				 io:fwrite("~p ~w ~p~n", [Prefix, Number, DocFile]),
 				 {ok, Doc} = file:read_file(DocFile),
 				 R = ec_coach:train(Class, Doc),
-				 io:fwrite("~p ~n", [R]),
-				 timer:sleep(250);
+				 io:fwrite("~p ~n", [R]);
 			     true -> 0
 			 end
 		 end, Files).

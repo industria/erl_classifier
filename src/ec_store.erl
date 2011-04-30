@@ -8,7 +8,7 @@
 -module(ec_store).
 
 %% API
--export([init_tables/0, delete_tables/0]).
+-export([init_tables/0, change_to_disc_copies/0, delete_tables/0]).
 
 %% Final exports are collected below in one export of each area
 -export([stopword_update/0, is_stopword/2]).
@@ -252,6 +252,14 @@ vocabulary_size() ->
 init_tables() ->
     create_tables().
 
+%% Swich the ram_copies tables to disc_copies
+change_to_disc_copies() ->
+    mnesia:change_table_copy_type(terms, node(), disc_copies),
+    mnesia:change_table_copy_type(doc_class_freq, node(), disc_copies),
+    mnesia:change_table_copy_type(class_vocabulary, node(), disc_copies),
+    mnesia:change_table_copy_type(term_class_freq, node(), disc_copies).
+
+
 delete_tables() ->
     mnesia:delete_table(ids),
     mnesia:delete_table(terms),
@@ -272,24 +280,24 @@ create_tables() ->
     			]),
     mnesia:create_table(terms, 
 			[{type, set},
-			 {disc_copies, [node()]},
+			 {ram_copies, [node()]},
 			 {attributes, record_info(fields, terms)}
 			]),
     mnesia:create_table(doc_class_freq, 
 			[{type, set},
-			 {disc_copies, [node()]},
+			 {ram_copies, [node()]},
 			 {attributes, record_info(fields, doc_class_freq)}
 			]),
 
     mnesia:create_table(class_vocabulary, 
 			[{type, set},
-			 {disc_copies, [node()]},
+			 {ram_copies, [node()]},
 			 {attributes, record_info(fields, class_vocabulary)}
 			]),
 
     mnesia:create_table(term_class_freq, 
 			[{type, set},
-			 {disc_copies, [node()]},
+			 {ram_copies, [node()]},
 			 {attributes, record_info(fields, term_class_freq)}
 			]),
     mnesia:create_table(stopwords, 
