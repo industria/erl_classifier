@@ -16,17 +16,24 @@
 -export([doc_freq_update/2]).
 -export([term_freq_update/3]).
 -export([doc_freq/1]).
--export([term_freq/2, vocabulary_size/0, vocabulary_size/1]).
+-export([term_freq/2]).
+-export([update_class_vocabulary/3, vocabulary_size/0, vocabulary_size/1]).
 -record(ids, {table, id}).
 
 -record(terms, {term, term_id}).
 
 %% Contain document counts for a class
 %% match_count + complement_count is the total number of documents
-%% for a class
+%% for a class.
 -record(doc_class_freq, {class, match_count, complement_count}).
 
--record(term_class_freq, {term_class, class, match_count, complement_count}).
+%% Contain the match count and complement count for a specific
+%% class term combination.
+-record(term_class_freq, {term_class, match_count, complement_count}).
+
+%% Contain match count and complement count for a class representing
+%% the class vocabulary size.
+-record(class_vocabulary, {class, match_count, complement_count}).
 
 %% Mnesia tables must have at least one extra attribute in addition
 %% to the key, hence the dummy attribute in the record definition.
@@ -142,15 +149,11 @@ term_freq_update(Class, Match, FreqDist) ->
     ok.
 
 new_term_freq(ClassTerm, Count, true) ->
-    {Class, _} = ClassTerm,
     #term_class_freq{term_class = ClassTerm,
-		     class = Class,
 		     match_count = Count,
 		     complement_count = 0};
 new_term_freq(ClassTerm, Count, false) ->
-    {Class, _} = ClassTerm,
     #term_class_freq{term_class = ClassTerm,
-		     class = Class,
 		     match_count = 0,
 		     complement_count = Count}.
 
@@ -187,6 +190,34 @@ term_freq(Class, TermId) ->
 	    {ok, 0, 0}
     end.
 
+%%--------------------------------------------------------------------
+%% Function: update_class_vocabulary(Class, Count, Match)
+%% Description: Update the class vocabulary size. The table updated
+%% is a precalculation table helping to answer the function
+%% vocabulary_size/1 without scanning the term_class_freq table.
+%%--------------------------------------------------------------------
+update_class_vocabulary(Class, Count, Match) ->
+    R = case mnesia:dirty_read(class_vocabulary, Class) of
+	    [CV] ->
+		update_class_voc(CV, Count, Match);
+	    _ ->
+		new_class_voc(Class, Count, Match)
+	end,
+    mnesia:dirty_write(class_vocabulary, R).
+		     
+
+
+new_class_voc(Class, Count, true) ->
+    #class_vocabulary{class = Class, match_count = Count, complement_count = 0};
+new_class_voc(Class, Count, false) ->
+    #class_vocabulary{class = Class, match_count = 0, complement_count = Count}.
+
+update_class_voc(ClassVoc, Count, true) ->
+    NewCount = ClassVoc#class_vocabulary.match_count + Count, 
+    ClassVoc#class_vocabulary{match_count = NewCount};
+update_class_voc(ClassVoc, Count, false) ->
+    NewCount = ClassVoc#class_vocabulary.complement_count + Count,
+    ClassVoc#class_vocabulary{complement_count = NewCount}.
 
 %%--------------------------------------------------------------------
 %% Function: vocabulary_size(Class) -> {ok, Match, Complement} 
@@ -197,24 +228,13 @@ term_freq(Class, TermId) ->
 %% activated.
 %%--------------------------------------------------------------------
 vocabulary_size(Class) ->
-    Key = mnesia:dirty_first(term_class_freq),
-    vocabulary_size_record(Key, Class, 0, 0).
-
-vocabulary_size_record('$end_of_table', _Class, Match, Complement) ->
-    {ok, Match, Complement};
-vocabulary_size_record(Key, Class, Match, Complement) ->
-    [R] = mnesia:dirty_read(term_class_freq, Key),
-    case R#term_class_freq.class of
-	Class ->
-	    NewMatch = Match + R#term_class_freq.match_count,
-	    NewComplement = Complement + R#term_class_freq.complement_count,
-	    NewKey = mnesia:dirty_next(term_class_freq, Key),
-	    vocabulary_size_record(NewKey, Class, NewMatch, NewComplement);
+    case mnesia:dirty_read(class_vocabulary, Class) of
+	[S] ->
+	    {ok, S#class_vocabulary.match_count, S#class_vocabulary.complement_count};
 	_ ->
-	    NextKey = mnesia:dirty_next(term_class_freq, Key),
-	    vocabulary_size_record(NextKey, Class, Match, Complement)
+	    {ok, 0, 0}
     end.
-			  
+
 %%--------------------------------------------------------------------
 %% Function: vocabulary_size() -> {ok, Count} 
 %% Description: Get vocabulary size.
@@ -236,6 +256,7 @@ delete_tables() ->
     mnesia:delete_table(ids),
     mnesia:delete_table(terms),
     mnesia:delete_table(doc_class_freq),
+    mnesia:delete_table(class_vocabulary),
     mnesia:delete_table(term_class_freq),
     mnesia:delete_table(stopwords).
 
@@ -260,11 +281,16 @@ create_tables() ->
 			 {attributes, record_info(fields, doc_class_freq)}
 			]),
 
+    mnesia:create_table(class_vocabulary, 
+			[{type, set},
+			 {disc_copies, [node()]},
+			 {attributes, record_info(fields, class_vocabulary)}
+			]),
+
     mnesia:create_table(term_class_freq, 
 			[{type, set},
 			 {disc_copies, [node()]},
-			 {attributes, record_info(fields, term_class_freq)},
-			 {index, [#term_class_freq.class]}
+			 {attributes, record_info(fields, term_class_freq)}
 			]),
     mnesia:create_table(stopwords, 
 			[{type, set},
@@ -274,7 +300,8 @@ create_tables() ->
 
     mnesia:wait_for_tables([ids, 
 			    terms, 
-			    doc_class_freq, 
+			    doc_class_freq,
+			    class_vocabulary,
 			    term_class_freq, 
 			    stopwords], 60000).
 

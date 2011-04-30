@@ -76,6 +76,11 @@ handle_cast({update_with_document, Classes, Document}, State) ->
     ec_store:doc_freq_update(State#state.class, Match),
     %% 3) Update class term counts
     ec_store:term_freq_update(State#state.class, Match, Document),
+    %% 4) Update class vocabulary counts
+    TermsInDocument = lists:foldl(fun({_TermId, Count}, Sum) ->
+					  Sum + Count
+				  end, 0, Document),
+    ec_store:update_class_vocabulary(State#state.class, TermsInDocument, Match),
     {noreply, State}.
 
 %%--------------------------------------------------------------------

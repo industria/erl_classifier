@@ -1,8 +1,8 @@
 %%%-------------------------------------------------------------------
 %%% File    : ec_coach.erl
 %%% Author  : James Lindstorff <james@ind-w700ds>
-%%% Description : Coach coordinating the training of all the 
-%%% positiv / negativ classifiers making up the complete classifier.
+%%% Description : The coach coordinates the training of the two-class
+%%% classifiers making up the complete any-of classifier.
 %%%
 %%% Created : 23 Apr 2011 by James Lindstorff <james@ind-w700ds>
 %%%-------------------------------------------------------------------
