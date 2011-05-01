@@ -59,10 +59,16 @@ init([]) ->
 handle_event({time, Class, MicroSeconds}, State) ->
     Classifications = State#state.classifications + 1,
 
-    %% TODO: Send it to the error_logger for now and implement statistics scoreboard later.
-    error_logger:info_msg("Classified for ~p in ~p mircoseconds (~p)~n", [Class, MicroSeconds, Classifications]),
+    CA = State#state.cma,
+    %% Cumulative moving average CAi+1 = CAi + ((Xi+1 - CAi) / i +1)
+    NewCA = CA + ( ( MicroSeconds - CA) /  Classifications),
+    
 
-    NewState = State#state{classifications = Classifications},
+
+    %% TODO: Send it to the error_logger for now and implement statistics scoreboard later.
+    error_logger:info_msg("Classified for ~p in ~p mircoseconds (~p avg ~p ) ~n", [Class, MicroSeconds, Classifications, NewCA]),
+    NewState = State#state{classifications = Classifications,
+			   cma = NewCA},
 
     {ok, NewState};
 handle_event(_Event, State) ->
