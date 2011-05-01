@@ -10,6 +10,7 @@
 -behaviour(gen_event).
 %% API
 -export([add_handler/0, delete_handler/0]).
+-export([statistics/0]).
 
 %% gen_event callbacks
 -export([init/1, handle_event/2, handle_call/2, 
@@ -21,7 +22,7 @@
 -record(state, {classifications = 0, cma = 0}).
 
 %%====================================================================
-%% gen_event callbacks
+%% Handler API
 %%====================================================================
 %%--------------------------------------------------------------------
 %% Function: add_handler() -> ok | {'EXIT',Reason} | term()
@@ -30,11 +31,22 @@
 add_handler() ->
     ec_event_classifier:add_handler(?MODULE, []).
 
+%%--------------------------------------------------------------------
 %% Function: delete_handler() -> ok | {'EXIT',Reason} | term()
 %% Description: Delete event handler
 %%--------------------------------------------------------------------
 delete_handler() ->
     ec_event_classifier:delete_handler(?MODULE, []).
+
+%%--------------------------------------------------------------------
+%% Function: statistics() -> [statistics]
+%% Description: Return a list of tagged tuples containing
+%% classification statistics. The tuples contained is as follows:
+%% {count, The number of two-class classifications done}
+%% {time, Average classification time for the two-class classifications} 
+%%--------------------------------------------------------------------
+statistics() ->
+    ec_event_classifier:statistics(?MODULE).
 
 %%====================================================================
 %% gen_event callbacks
@@ -84,6 +96,12 @@ handle_event(_Event, State) ->
 %% gen_event:call/3,4, this function is called for the specified event 
 %% handler to handle the request.
 %%--------------------------------------------------------------------
+handle_call(statistics, State) ->
+    Reply = [ 
+	      {count, State#state.classifications},
+	      {time, State#state.cma}
+	    ],
+    {ok, Reply, State};
 handle_call(_Request, State) ->
     Reply = ok,
     {ok, Reply, State}.

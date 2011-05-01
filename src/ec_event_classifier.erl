@@ -16,9 +16,9 @@
 -export([start_link/0, add_handler/2, delete_handler/2]).
 
 -export([stat_time/2]).
+-export([statistics/1]).
 
 -define(SERVER, ?MODULE).
-
 
 %%====================================================================
 %% API
@@ -47,7 +47,6 @@ add_handler(Handler, Args) ->
 delete_handler(Handler, Args) ->
     gen_event:delete_handler(?SERVER, Handler, Args).
 
-
 %%--------------------------------------------------------------------
 %% Function: stat_time(Class, MicroSeconds)
 %% Description: The amount of time in MicroSeconds used by a two-class
@@ -57,7 +56,12 @@ delete_handler(Handler, Args) ->
 stat_time(Class, MicroSeconds) ->
     gen_event:notify(?SERVER, {time, Class, MicroSeconds}).
 
-
+%%--------------------------------------------------------------------
+%% Function: statistics(Handler)
+%% Description: Sends the statistics message to the handler.
+%%--------------------------------------------------------------------
+statistics(Handler) ->
+    gen_event:call(?SERVER, Handler, statistics).
 
 %%====================================================================
 %% Internal functions
