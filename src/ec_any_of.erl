@@ -58,20 +58,30 @@ start_link(Classes) ->
     gen_server:start_link(?MODULE, [ Classes ], []).
 
 
+%%--------------------------------------------------------------------
+%% Function: classify(Document) -> [Class]
+%% Description: Return a list of classes matching the document.
+%%--------------------------------------------------------------------
 classify(Document) ->
-    {ok, _Result, Classes} = classify_detail(Document),
-    Classes.
+    {ok, Result} = classify_detail(Document),
+    [ Class || {Class, Match, Complement} <- Result, (Match > Complement)].
 
+%%--------------------------------------------------------------------
+%% Function: classify_detail(Document) -> {ok, [{class, match, complement}]} |
+%%                                        fail_timeout
+%% Description: Return a list of tuples tagged with the class and
+%% a match and a complement proof. The proofs are the logrithmic sums
+%% from the two-class classifier, where the largest proof indicates 
+%% the class the document belongs to. This function should
+%% only be called if the numbers are of interest, otherwise calling
+%% classify/1 will give a list of classes matching the document 
+%% without all the details.
+%%--------------------------------------------------------------------
 classify_detail(Document) ->
     {ok, Pid} = ec_any_of_sup:start_child(),
     R = try gen_server:call(Pid, {classify, Document}) of
 	Result ->
-		%% This contains the result of the classify call
-		Classes = [ Class || 
-			      {Class, Match, Complement} <- Result,
-			      (Match > Complement) 
-			  ],
-		{ok, Result, Classes}
+		{ok, Result}
 	catch
 	    exit:{timeout, _} ->
 		%% TODO: if any classifying processes is still
@@ -128,7 +138,7 @@ handle_call({classify, Document}, From, State) ->
     %% 6) Create a frequency distribution
     TFD = ec_frequency_distribution:create(TermIds),
 
-    %% Generate the N class classifiers
+    %% Generate the N two-class classifiers
     Launch = fun(Class, Acc) ->
 		     {ok, Pid} = ec_classifier_launcher_sup:start_child(),
 		     ec_classifier:classify(Pid, Class, TFD),
