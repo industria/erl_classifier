@@ -59,13 +59,32 @@ start_link(Classes) ->
 
 
 %%--------------------------------------------------------------------
+%% Function: classify(Filename) -> [Class] | {error, Reason}
+%% Description: Return a list of classes matching the document read
+%% from the file pointed to by Filename.
+%% {error, Reason} is the error from file:read_file passed through.
+%%--------------------------------------------------------------------
+classify(Filename) when is_list(Filename) ->
+    read_file_and_classify(Filename, fun classify/1);
+%%--------------------------------------------------------------------
 %% Function: classify(Document) -> [Class]
 %% Description: Return a list of classes matching the document.
 %%--------------------------------------------------------------------
-classify(Document) ->
+classify(Document) when is_binary(Document)->
     {ok, Result} = classify_detail(Document),
     [ Class || {Class, Match, Complement} <- Result, (Match > Complement)].
 
+
+%%--------------------------------------------------------------------
+%% Function: classify_detail(Filename) -> {ok, [{class, match, complement}]} |
+%%                                         fail_timeout |
+%%                                         {error, Reason}
+%% Description: Return classification detail for a file. See the
+%% classify_detail for binary document for details on whats returned.
+%% {error, Reason} is the error from file:read_file passed through.
+%%--------------------------------------------------------------------
+classify_detail(Filename) when is_list(Filename) ->
+    read_file_and_classify(Filename, fun classify_detail/1);
 %%--------------------------------------------------------------------
 %% Function: classify_detail(Document) -> {ok, [{class, match, complement}]} |
 %%                                        fail_timeout
@@ -77,7 +96,7 @@ classify(Document) ->
 %% classify/1 will give a list of classes matching the document 
 %% without all the details.
 %%--------------------------------------------------------------------
-classify_detail(Document) ->
+classify_detail(Document) when is_binary(Document) ->
     {ok, Pid} = ec_any_of_sup:start_child(),
     R = try gen_server:call(Pid, {classify, Document}) of
 	Result ->
@@ -238,14 +257,32 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 
+%%--------------------------------------------------------------------
+%% Func: terms_to_ids(Terms) -> [TermId | unknown]
+%% Description: Convert terms list into a list of term ids.
+%%--------------------------------------------------------------------
 terms_to_ids(Terms) ->
-    lists:foldl(fun term_to_id/2, [], Terms).
+    lists:foldl(fun(Term, Ids) -> 
+			case ec_store:term_id(Term) of
+			    {ok, Id} ->
+				[Id | Ids];
+			    unknown ->
+				[unknown | Ids]
+			end
+		end, [], Terms).
 
-term_to_id(Term, Ids) ->
-    case ec_store:term_id(Term) of
-	{ok, Id} ->
-	    [Id | Ids];
-	unknown ->
-	    [unknown | Ids]
+%%--------------------------------------------------------------------
+%% Func: read_file_and_classify(Filename, ClassificationFunction)
+%% Description: Helper function for classify/1 and classify_detail/1
+%% in their file versions. It takes the filename reads it and applies
+%% the classification function given. Used to avoid repeating the
+%% case construct.
+%%--------------------------------------------------------------------
+read_file_and_classify(Filename, ClassificationFunction) ->
+    case file:read_file(Filename) of
+	{ok, Document} ->
+	    ClassificationFunction(Document);
+	{error, Reason} ->
+	    {error, Reason}
     end.
 
