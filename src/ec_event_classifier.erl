@@ -6,7 +6,7 @@
 %%% Implementing a event handler (gen_event behaviour) you have
 %%% to be able to handle the following messages in handle_event:
 %%%
-%%% {time, MicroSeconds} : Amount of time used by a single two-class.
+%%% {time, Class, MicroSeconds} : Amount of time used by a single two-class.
 %%%
 %%% Created : 25 Apr 2011 by James Lindstorff <james@ind-w700ds>
 %%%-------------------------------------------------------------------
@@ -15,7 +15,7 @@
 %% API
 -export([start_link/0, add_handler/2, delete_handler/2]).
 
--export([stat_time/1]).
+-export([stat_time/2]).
 
 -define(SERVER, ?MODULE).
 
@@ -49,13 +49,13 @@ delete_handler(Handler, Args) ->
 
 
 %%--------------------------------------------------------------------
-%% Function: stat_time(MicroSeconds)
+%% Function: stat_time(Class, MicroSeconds)
 %% Description: The amount of time in MicroSeconds used by a two-class
 %% classifier to calculate the P(c|d) and P(^c|d).
-%% Message to handle : {time, MicroSeconds}
+%% Message to handle : {time, Class, MicroSeconds}
 %%--------------------------------------------------------------------
-stat_time(MicroSeconds) ->
-    gen_event:notify(?SERVER, {time, MicroSeconds}).
+stat_time(Class, MicroSeconds) ->
+    gen_event:notify(?SERVER, {time, Class, MicroSeconds}).
 
 
 

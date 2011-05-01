@@ -112,7 +112,7 @@ handle_cast({classify_log, Class, Document, ReplyTo}, State) ->
 
     %% Calculate time use and post event
     Inst_MicroSeconds = timer:now_diff(now(), Inst_Start),
-    ec_event_classifier:stat_time(Inst_MicroSeconds),
+    ec_event_classifier:stat_time(Class, Inst_MicroSeconds),
 
     ec_any_of:result(ReplyTo, Class, Pcd, PcdC),
     {noreply, State};

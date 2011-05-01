@@ -55,9 +55,9 @@ init([]) ->
 %% gen_event:notify/2 or gen_event:sync_notify/2, this function is called for
 %% each installed event handler to handle the event. 
 %%--------------------------------------------------------------------
-handle_event({time, MicroSeconds}, State) ->
+handle_event({time, Class, MicroSeconds}, State) ->
     %% TODO: Send it to the error_logger for now and implement statistics scoreboard later.
-    error_logger:info_msg("Classified in: ~p mircoseconds ~n", [MicroSeconds]),
+    error_logger:info_msg("Classified for ~p in ~p mircoseconds ~n", [Class, MicroSeconds]),
     {ok, State};
 handle_event(_Event, State) ->
     {ok, State}.
