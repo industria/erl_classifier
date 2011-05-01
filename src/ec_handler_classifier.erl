@@ -15,7 +15,10 @@
 -export([init/1, handle_event/2, handle_call/2, 
 	 handle_info/2, terminate/2, code_change/3]).
 
--record(state, {classifications = 0}).
+%% Record contains:
+%% classifications : The total number of classifications done
+%% cma: Cumulative moving average classification time (microseconds)
+-record(state, {classifications = 0, cma = 0}).
 
 %%====================================================================
 %% gen_event callbacks
