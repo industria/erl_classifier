@@ -93,8 +93,17 @@ classify_detail(Document) ->
     gen_server:cast(Pid, stop),
     R.
 
+%%--------------------------------------------------------------------
+%% Function: result(Pid, Class, Match, Complement)
+%% Description: Callback API-function used by a two-class classifiers
+%% to signal that is has classified a document. This API-function
+%% sends the any-of coordinator a result message registering the result.
+%% After registering the result with the any-of coordinater 
+%% the two-class classifier asks itself to stop.
+%%--------------------------------------------------------------------
 result(Pid, Class, Match, Complement) ->
-    {ok, PidThatReplied} = gen_server:call(Pid, {result, Class, Match, Complement}),
+    ResultMessage = {result, Class, Match, Complement},
+    {ok, PidThatReplied} = gen_server:call(Pid, ResultMessage),
     ec_classifier:stop(PidThatReplied).
 
 
