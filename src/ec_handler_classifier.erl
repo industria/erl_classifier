@@ -15,7 +15,7 @@
 -export([init/1, handle_event/2, handle_call/2, 
 	 handle_info/2, terminate/2, code_change/3]).
 
--record(state, {}).
+-record(state, {classifications = 0}).
 
 %%====================================================================
 %% gen_event callbacks
@@ -54,9 +54,14 @@ init([]) ->
 %% each installed event handler to handle the event. 
 %%--------------------------------------------------------------------
 handle_event({time, Class, MicroSeconds}, State) ->
+    Classifications = State#state.classifications + 1,
+
     %% TODO: Send it to the error_logger for now and implement statistics scoreboard later.
-    error_logger:info_msg("Classified for ~p in ~p mircoseconds ~n", [Class, MicroSeconds]),
-    {ok, State};
+    error_logger:info_msg("Classified for ~p in ~p mircoseconds (~p)~n", [Class, MicroSeconds, Classifications]),
+
+    NewState = State#state{classifications = Classifications},
+
+    {ok, NewState};
 handle_event(_Event, State) ->
     {ok, State}.
 
