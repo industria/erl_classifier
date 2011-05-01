@@ -1,18 +1,15 @@
 Naive Bayes classifier in Erlang
 
-The classifier can be used to solve any-of classifications using the aproach of 
+The classifier can be used to solve any-of classifications using the approach of 
 N two-class classifiers.
 
 
 Note: All files are expected to be UTF8 encoded.
 
-
-
 Stop word lists:
 
      - Are kept in priv/stopwords/
      - Must be named lang.stopwords, where lang is the language of the stop words in the file.
-
 
 
 Setting up the mnesia datastore:
@@ -30,12 +27,10 @@ Setting up the mnesia datastore:
    > ec_sport_demo:train().
    > ec_store:change_to_disc_copies().
  
+3) Classifying text (you can run the ec_any_of:classify as many times as you like)
+   make console
+   > ec_any_of:classify(<<"your text in danish"/utf8>>).
 
-To startup after the mnesia datastore has been initialized:
 
--- make console
 
-Classifying a document after the above storage initialization:
-
--- ec_classifier:classify(<<"your text in danish"/utf8>>).
 
