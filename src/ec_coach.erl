@@ -37,8 +37,11 @@
 train(Class, Document) when is_atom(Class), is_binary(Document) ->
     gen_server:call(?SERVER, {train, [Class], Document});
 train(Classes, Document) when is_list(Classes), is_binary(Document) ->
-    gen_server:call(?SERVER, {train, Classes, Document}).
-
+    gen_server:call(?SERVER, {train, Classes, Document});
+train(Class, Filename) when is_atom(Class), is_list(Filename) ->
+    read_file_and_train(Filename, [Class], fun train/2);
+train(Classes, Filename) when is_list(Classes), is_list(Filename) ->
+    read_file_and_train(Filename, Classes, fun train/2).
 
 %%--------------------------------------------------------------------
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
@@ -132,3 +135,17 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+
+%%--------------------------------------------------------------------
+%% Func: read_file_and_train(Filename, TrainingFunction)
+%% Description: Read the file to a binary and call the TrainingFunction
+%% with the Classes list. This is to avoiding repeating the
+%% read_file in case for each file based train function.
+%%--------------------------------------------------------------------
+read_file_and_train(Filename, Classes, TrainingFunction) ->
+    case file:read_file(Filename) of
+	{ok, Document} ->
+	    TrainingFunction(Classes, Document);
+	{error, Reason} ->
+	    {error, Reason}
+    end.

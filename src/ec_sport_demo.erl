@@ -30,7 +30,7 @@ train() ->
 				 DocFile = string:join([?DOCPATH, File], "/"),
 				 io:fwrite("~p ~w ~p~n", [Prefix, Number, DocFile]),
 				 {ok, Doc} = file:read_file(DocFile),
-				 R = ec_coach:train(Class, Doc),
+				 R = ec_coach:train(Class, DocFile),
 				 io:fwrite("~p ~n", [R]);
 			     true -> 0
 			 end
