@@ -134,7 +134,7 @@ is_stopword_file_test() ->
 stopword_files_test() ->
     Files = stopword_files("test/stopwords"),
     SortedFiles = lists:sort(Files),
-    ExpectedFileList = ["danish.stopwords", "demo.stopwords"],
+    ExpectedFileList = ["danish.stopwords", "demo.stopwords", "swedish.stopwords"],
     ?assertEqual(ExpectedFileList, SortedFiles).
 
 read_stopword_file_test() ->
@@ -155,7 +155,7 @@ stopword_lists_test() ->
     SL = stopword_lists("test/stopwords"),
     Languages = [ L || {L, _} <- SL],
     SortedLanguages = lists:sort(Languages),
-    ExpectedLanguages = [danish, demo],
+    ExpectedLanguages = [danish, demo, swedish],
     ?assertEqual(ExpectedLanguages, SortedLanguages),
     {_, DL} = lists:keyfind(demo, 1, SL),
     SortedDL = lists:sort(DL),
