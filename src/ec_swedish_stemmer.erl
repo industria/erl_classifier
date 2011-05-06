@@ -47,50 +47,15 @@ regions(Word) ->
     %% R2 is the region after the first non-vowel following a vowel
     %% in R1, or is the null region at the end of the word if there
     %% is no such non-vowel.
-    R1 = r1(Word),
+    Vowels = "aeiouy\x{E4}\x{E5}\x{F6}",
+    R1 = ec_stemming:r1(Word, Vowels),
     %% R1 is adjusted so that the region before it contains 
     %% at least 3 letters.
-    R1Adjusted = adjustR1(Word, R1),
+    R1Adjusted = ec_stemming:adjustR1(Word, R1),
     %% R2 is not used by the Swedish stemmer, so it's not calculated
     %% To calculate it do r1(R1)
     {ok, R1Adjusted, []}.
 
-r1([]) ->
-    [];
-r1(Word) ->
-    %% R1 is the region after the first non-vowel following a vowel,
-    %% or is the null region at the end of the word if there is no 
-    %% such non-vowel.
-    [H | T] = Word,
-    r1(T, H).
-r1([], _Last) ->
-    [];
-r1([H | T], Last) ->
-    PrevVowel = is_vowel(Last),
-    CurrVowel = is_vowel(H),
-    if
-	(PrevVowel =:= true) and (CurrVowel =:= false) ->
-	    T;
-	true ->
-	    r1(T, H)
-    end.
-
-is_vowel(Character) ->
-    %% Classifies the character as being a vowel or not a vowel
-    %% vowels are: aeiouyäåö
-    lists:member(Character, "aeiouy\x{E4}\x{E5}\x{F6}").
-
-adjustR1(Word, R1) ->
-    %% Region before R1 needs to be at least 3 characters
-    WordRegionLength = string:len(Word) - string:len(R1),
-    if
-	(3 =<  WordRegionLength) ->
-	    R1;
-	(3 > WordRegionLength) and (0 < WordRegionLength) ->
-	    string:substr(Word, 4);
-	true ->
-	    Word
-    end.
 
 step1a(Word, R1) ->
     %% Search for the longest among the following suffixes in R1, 
@@ -101,105 +66,37 @@ step1a(Word, R1) ->
 		   "erna", "erns", "orna", "ades", "ade", "are",
 		   "ast", "ens", "ern", "het", "ad", "ar", "as",
 		   "at", "en", "er", "es", "or", "a", "e"],
-    case matchsuffix(Step1suffix, R1) of
+    case ec_stemming:match_suffix(Step1suffix, R1) of
 	{ok, MatchedSuffix} ->
-	    removesuffix(Word, R1, MatchedSuffix);
+	    ec_stemming:remove_suffix(Word, R1, MatchedSuffix);
 	{nomatch} ->
-	    step1b(Word, R1)
-    end.
-
-step1b(Word, R1) ->
-    %% Delete trailing S if preceded by a valid s-ending
-    IsSuffixS = lists:suffix("s", R1),
-    if
-	IsSuffixS ->
+	    %% This corresponds to step 1 b
 	    SEndings = ["b", "c", "d", "f", "g", "h", "j", "k", "l",
 			"m", "n", "o", "p", "r", "t", "v", "y"],
-	    BeforeS = string:substr(Word, string:len(Word) - 1, 1),
-	    ValidSEnding = lists:any(fun(X) -> BeforeS =:= X end, SEndings),
-	    if
-		ValidSEnding =:= true ->
-		    {ok, removelast(Word), removelast(R1)};
-		true ->
-		    {ok, Word, R1}
-	    end;
-	true ->
-	    {ok, Word, R1}	    
+	    ec_stemming:remove_trailing_s_ending(Word, R1, SEndings)
     end.
-
-removelast(Word) ->
-    %% Remove last character from word
-    ReverseWord = lists:reverse(Word),
-    [_ | T] = ReverseWord,
-    lists:reverse(T).
 
 step2(Word, R1) ->
-    %% Search for one of (dd, gd, nn, dt, gt, kt, tt) suffixes in R1, and if found
-    %% delete the last letter
     Suffixes = ["dd", "gd", "nn", "dt", "gt", "kt", "tt"],
-    IsSuffixFound = lists:any(fun(X) -> lists:suffix(X, R1) end, Suffixes),
-    if
-	IsSuffixFound =:= true ->
-	    {ok, removelast(Word), removelast(R1)};
-	true ->
-	    {ok, Word, R1}
-    end.
-
+    ec_stemming:remove_last_on_suffix_match(Word, R1, Suffixes).
 
 step3(Word, R1) ->
     {ok, WordLast, R1Last} = step3removelast(Word, R1),
     step3removesuffix(WordLast, R1Last).
 
-%% "lig"   "ig"   "els" 
-%% %%delete 
-
-%% "löst" 
-%% %%replace with lös 
-
-%% "fullt" 
-%% %%replace with full
-
-
 step3removelast(Word, R1) ->
     Suffixes = ["fullt", "l\x{F6}st"],
-    IsSuffixFound = lists:any(fun(X) -> lists:suffix(X, R1) end, Suffixes),
-    if
-	IsSuffixFound =:= true ->
-	    {ok, removelast(Word), removelast(R1)};
-	true ->
-	    {ok, Word, R1}
-    end.
-    
+    ec_stemming:remove_last_on_suffix_match(Word, R1, Suffixes).
+
 step3removesuffix(Word, R1) ->
     Step3suffix = ["lig", "ig", "els"],
-    case matchsuffix(Step3suffix, R1) of
+    case ec_stemming:match_suffix(Step3suffix, R1) of
 	{ok, MatchedSuffix} ->
-	    removesuffix(Word, R1, MatchedSuffix);
+	    ec_stemming:remove_suffix(Word, R1, MatchedSuffix);
 	{nomatch} ->
 	    {ok, Word, R1}
     end.
 
-
-matchsuffix([], _R1) ->
-    {nomatch};
-
-matchsuffix([H | T], R1) ->
-    Match = lists:suffix(H, R1),
-    if
-	Match =:= true -> 
-	    {ok, H};
-	true ->
-	    matchsuffix(T, R1)
-    end.
-
-removesuffix(Word, R1, Suffix) ->
-    %% Remove the Suffix from Word and R1
-    LenSuffix = string:len(Suffix),
-    LenWord = string:len(Word),
-    LenR1 = string:len(R1),
-    NewWord = string:substr(Word, 1, LenWord - LenSuffix),
-    NewR1 = string:substr(R1, 1, LenR1 - LenSuffix),
-    {ok, NewWord, NewR1}.
 
 %%====================================================================
 %% Testing
@@ -304,10 +201,6 @@ regions_test() ->
 regions_bestemmelse_test() ->
     ?assertMatch({ok, "temmelse", []}, regions("bestemmelse")).
 
-adjustR1_test() ->
-    ?assertEqual("urn", adjustR1("return", "turn")),
-    ?assertEqual("return", adjustR1("return", "return")),
-    ?assertEqual("urn", adjustR1("return", "urn")).
 
 step1a_bestemmelse_test() ->
     Word = "bestemmelse",
@@ -316,22 +209,6 @@ step1a_bestemmelse_test() ->
 
 step1a_nomatch_test() ->
     ?assertMatch({ok, "nomatch", "nomatch"}, step1a("nomatch", "nomatch")).
-
-step1b_test() ->
-    ?assertMatch({ok, "ddws", "ddws"}, step1b("ddws","ddws")),
-    ?assertMatch({ok, "ddl", "l"}, step1b("ddls","ls")),
-    ?assertMatch({ok, "bestemmel", "temmel"}, step1b("bestemmels","temmels")).
-
-removelast_test() ->
-    ?assertEqual("fis", removelast("fisk")),
-    ?assertEqual("", removelast("k")).
-
-step2_test() ->
-    ?assertMatch({ok, "frisk", "frisk"}, step2("friskt","friskt")),
-    ?assertMatch({ok, "frisk", "sk"}, step2("frisk","sk")),
-    ?assertMatch({ok, "goog", "g"}, step2("googd","gd")),
-    ?assertMatch({ok, "goog", "g"}, step2("googt","gt")),
-    ?assertMatch({ok, "good", "d"}, step2("goodt","dt")).
 
 step3_test() ->
     ?assertMatch({ok, "goodfull", "dfull"}, step3("goodfullt","dfullt")),
@@ -349,22 +226,6 @@ step3removesuffix_test() ->
     ?assertMatch({ok, "goodd", "d"}, step3removesuffix("gooddig","dig")),
     ?assertMatch({ok, "goodd", "d"}, step3removesuffix("gooddels","dels")).
 
-is_vowel_test() ->
-    ?assert(is_vowel($a)),
-    ?assert(is_vowel($e)),
-    ?assert(is_vowel($i)),
-    ?assert(is_vowel($o)),
-    ?assert(is_vowel($u)),
-    ?assert(is_vowel($y)),
-    ?assert(is_vowel(16#E4)), % ä
-    ?assert(is_vowel(16#E5)), % å  
-    ?assert(is_vowel(16#F6)), % ö
-    ?assertNot(is_vowel($x)),
-    ?assertNot(is_vowel($b)).
-
-removesuffix_test() ->
-    ?assertMatch({ok, "fisk", "k"}, removesuffix("fiskdel", "kdel", "del")).
-    
 stem_binary_test() ->
     ?assertEqual(<<"unders\x{E5}t"/utf8>>, stem(<<"unders\x{E5}tter"/utf8>>)),
     ?assertEqual(<<"indtag"/utf8>>, stem(<<"indtage"/utf8>>)),
