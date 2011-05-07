@@ -39,13 +39,13 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/1, classify/1, classify_detail/1, result/4]).
+-export([start_link/2, classify/1, classify_detail/1, result/4]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
--record(state, {classes, pidmap, results = [], deferredreplyclient}).
+-record(state, {classes, language, pidmap, results = [], deferredreplyclient}).
 
 %%====================================================================
 %% API
@@ -54,8 +54,8 @@
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
-start_link(Classes) ->
-    gen_server:start_link(?MODULE, [ Classes ], []).
+start_link(Classes, Language) ->
+    gen_server:start_link(?MODULE, [ Classes, Language ], []).
 
 
 %%--------------------------------------------------------------------
@@ -137,8 +137,8 @@ result(Pid, Class, Match, Complement) ->
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init([ Classes ]) ->
-    {ok, #state{classes = Classes}}.
+init([ Classes, Language ]) ->
+    {ok, #state{classes = Classes, language = Language}}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -158,7 +158,8 @@ handle_call({classify, Document}, From, State) ->
 
     %% 3) Remove stopwords from the list 
     %% 4) Stem the words
-    Stemmed = [ ec_danish_stemmer:stem(T) || T <- Terms, not ec_stopwords:is_stopword(danish, T)],
+    Language = State#state.language,
+    Stemmed = [ ec_stemming:stem(Language, T) || T <- Terms, not ec_stopwords:is_stopword(Language, T)],
 
     %% 5) Get the tokens converted into term ids
     TermIds = terms_to_ids(Stemmed),

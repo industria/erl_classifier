@@ -48,8 +48,9 @@ start_child() ->
 %%--------------------------------------------------------------------
 init([]) ->
     Classes = ec_configuration:classes(),
+    Language = ec_configuration:language(),
     CoordServer = {ec_any_of, 
-		      {ec_any_of, start_link, [ Classes ]},
+		      {ec_any_of, start_link, [ Classes, Language ]},
 		      temporary, 
 		      brutal_kill, 
 		      worker, 

@@ -19,7 +19,7 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {classtrainers}).
+-record(state, {classtrainers, language}).
 
 %%====================================================================
 %% API
@@ -62,7 +62,8 @@ start_link(ClassTrainers) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init(ClassTrainers) ->
-    {ok, #state{classtrainers=ClassTrainers}}.
+    {ok, #state{classtrainers=ClassTrainers, 
+		language=ec_configuration:language()}}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -82,7 +83,8 @@ handle_call({train, Classes, Document}, _From, State) ->
 
     %% 3) Remove stopwords from the list 
     %% 4) Stem the words
-    Stemmed = [ ec_danish_stemmer:stem(T) || T <- Terms, not ec_stopwords:is_stopword(danish, T)],
+    Language = State#state.language,
+    Stemmed = [ ec_stemming:stem(Language, T) || T <- Terms, not ec_stopwords:is_stopword(Language, T)],
 
     %% 5) Get the tokens converted into term ids
     {ok, TermIds} = ec_term_manager:update(Stemmed),

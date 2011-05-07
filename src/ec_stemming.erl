@@ -13,12 +13,25 @@
 
 
 %% API
+-export([stem/2]).
 -export([adjustR1/2, match_suffix/2, r1/2, remove_suffix/3, remove_last/1,
 	 remove_trailing_s_ending/3, remove_last_on_suffix_match/3]).
 
 %%====================================================================
 %% API
 %%====================================================================
+%%--------------------------------------------------------------------
+%% Function: stem(language, term) -> StemmedWord
+%% Description: Stem a word for a given language.
+%% Currently language can be the atoms danish or swedish
+%% Unknown languages are handled by passing the Term directly through.
+%%--------------------------------------------------------------------
+stem(danish, Term) ->
+    ec_danish_stemmer:stem(Term);
+stem(swedish, Term) ->
+    ec_swedish_stemmer:stem(Term);
+stem(_, Term) ->
+    Term.
 
 %%--------------------------------------------------------------------
 %% Function: adjustR1(Word, R1) -> adjusted R1
