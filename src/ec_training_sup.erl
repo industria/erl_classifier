@@ -12,7 +12,7 @@
 -behaviour(supervisor).
 
 %% API
--export([start_link/1]).
+-export([start_link/0]).
 
 %% Supervisor callbacks
 -export([init/1]).
@@ -26,8 +26,8 @@
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the supervisor
 %%--------------------------------------------------------------------
-start_link(Classes) ->
-    supervisor:start_link({local, ?SERVER}, ?MODULE, Classes).
+start_link() ->
+    supervisor:start_link({local, ?SERVER}, ?MODULE, []).
 
 %%====================================================================
 %% Supervisor callbacks
@@ -41,7 +41,7 @@ start_link(Classes) ->
 %% to find out about restart strategy, maximum restart frequency and child 
 %% specifications.
 %%--------------------------------------------------------------------
-init(Classes) ->
+init([]) ->
     %% Child specification is a tuple like:
     %% {ID, Start, Restart, Shutdown, Type, Modules}
     %% ID : identified the specification internally
@@ -64,6 +64,7 @@ init(Classes) ->
 			 },
 		 [Child | Children]
     end,
+    Classes = ec_configuration:classes(),
     ClassTrainerChildren = lists:foldl(CB, [], Classes),
 
     TermManagerChild = {ec_term_manager, 
@@ -95,5 +96,3 @@ init(Classes) ->
 %% Pull the specification ids from a list of child specifications
 class_trainers(ClassTrainerSpecs) ->
     [ SpecId || {SpecId, _, _, _, _, _} <- ClassTrainerSpecs].
-
-		 

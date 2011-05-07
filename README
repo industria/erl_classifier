@@ -4,6 +4,17 @@ The classifier can be used to solve any-of classifications using the approach of
 N two-class classifiers.
 
 
+Configuring the classifier:
+The classifier is configured via the env part of the app term 
+in erl_classifier.app. The following items most be setup:
+
+1) Language: {language, language_atom}
+   language atoms supported is danish and swedish.
+
+2) Classes: {classes, [class1, ..., classn]}
+   List the classes of the classifier corresponding to two-class classifiers 
+   the application will contain.
+
 Note: All files are expected to be UTF8 encoded.
 
 Stop word lists:
