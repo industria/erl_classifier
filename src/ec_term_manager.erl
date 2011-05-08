@@ -78,7 +78,7 @@ handle_call({update_list, Terms}, _From, State) ->
 			 [TermId | Acc]
 		 end,
     TermIds = lists:foldl(TermUpdate, [], Terms),
-    %% Reverse the list so it has the same as the terms list
+    %% Reverse the list, so it has the same order as the terms list
     Reply = {ok, lists:reverse(TermIds)},
     {reply, Reply, State}.
 
