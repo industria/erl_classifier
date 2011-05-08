@@ -7,3 +7,5 @@
 ebin/*
 # Mnesia datastore
 datastore/*
+#plt
+*.plt

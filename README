@@ -3,8 +3,18 @@ Naive Bayes classifier in Erlang
 The classifier can be used to solve any-of classifications using the approach of 
 N two-class classifiers.
 
+Note: All files are expected to be UTF8 encoded.
 
-Configuring the classifier:
+Section:
+
+1) Configuring the classifier
+2) Stop word lists
+3) Setting up the mnesia datastore
+4) Dialyzer on Ubuntu
+
+=============================
+1. Configuring the classifier
+=============================
 The classifier is configured via the env part of the app term 
 in erl_classifier.app. The following items most be setup:
 
@@ -15,15 +25,18 @@ in erl_classifier.app. The following items most be setup:
    List the classes of the classifier corresponding to two-class classifiers 
    the application will contain.
 
-Note: All files are expected to be UTF8 encoded.
 
-Stop word lists:
+==================
+2. Stop word lists
+==================
 
-     - Are kept in priv/stopwords/
-     - Must be named lang.stopwords, where lang is the language of the stop words in the file.
+1) Are kept in priv/stopwords/
+2) Must be named lang.stopwords, where lang is the language of the stop words in the file.
 
 
-Setting up the mnesia datastore:
+==================================
+3. Setting up the mnesia datastore
+==================================
 
 1) Setting up the schema
    make console
@@ -43,5 +56,18 @@ Setting up the mnesia datastore:
    > ec_any_of:classify(<<"your text in danish"/utf8>>).
 
 
+=====================
+4. Dialyzer on Ubuntu
+=====================
+
+The dialyzer target in the Makefile will not work if you are on a package based Ubuntu installation,
+because they decided to strip the debug info from the release by not building with +debug_info.
+
+This effectivly breaks Erlang development on Ubuntu and as fare as I have been able to gather there
+is no supported package with that option set. Without it dialyzer will not be able to run so the
+Ubuntu Erlang distribution is broken for anything needing dialyzer.
+
+The solution is to uninstall all Erlang packages and build a new install from the source distribution
+on erlang.org.
 
 
