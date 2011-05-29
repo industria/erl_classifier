@@ -10,6 +10,7 @@
 		ec_coach,
 		ec_configuration,
 		ec_danish_stemmer,
+		ec_docfile,
 		ec_document_processing,
 		ec_event_classifier,
 		ec_frequency_distribution,
