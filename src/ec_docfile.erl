@@ -27,8 +27,9 @@
 %% Description: Train the classifier with a document file.
 %%--------------------------------------------------------------------
 train(Docfile) ->
-    F = fun(Classes, Document) ->
-		io:fwrite("~p ~n", [Classes])
+    F = fun(Classes, Document, Acc) ->
+		ec_coach:train(Classes, Document),
+		Acc
 	end,
     train(Docfile, F, void).
 

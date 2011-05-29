@@ -34,6 +34,10 @@
 	   %% Classes making up the classifier
 	   %% List the class atoms in the list
   	   {classes, [f1, cykling, fodbold]}
+	   %%{classes, [atletik,biler,boeger,cykling,digitalt,erhverv,f1,film,
+	   %%	      fodbold,forbrug,haandbold,indland,klima,kultur,mad,musik,
+ 	   %%	      penge,politik,rejser,sport,sundhed,tennis,uddannelse,udland,
+ 	   %%	      videnskab]}
 	] },
   %% mod is : { module, one-start argument}
   {mod, {erl_classifier_app, [] }}
