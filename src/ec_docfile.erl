@@ -82,10 +82,28 @@ read_docfile_line(IoDevice, Trainer, Acc) ->
 %% Description: Expects a binary line in docfile format.
 %%--------------------------------------------------------------------
 line_processor(Line) ->
-    Tokens = binary:split(Line, <<",">>, [global]),
+    %%Tokens = binary:split(Line, <<",">>, [global]),
+    %% Use above instead on the one below if on R14
+    Tokens = tokenize(Line),
     [Document | Classes] = Tokens,
     ClassAtoms = [ filtered_bin_to_atom(C) || C <- Classes],
     {ok, Document, ClassAtoms}.
+
+%%--------------------------------------------------------------------
+%% Function: tokenize(Line) -> [binary()]
+%% Description: Tokenizes the line on comma. 
+%% The call to this can be replaced with a call to binary:split/3
+%% if you are running on R14, so this is to support R13
+%%--------------------------------------------------------------------
+tokenize(Line) ->
+    LineList = [ X || <<X/utf8>> <= Line],
+    Tokens = string:tokens(LineList, ","),
+    ToBin = fun(String, BinTokensAcc) ->
+		    B = unicode:characters_to_binary(String, utf8, utf8),
+		    [B | BinTokensAcc]
+	    end,
+    BinTokens = lists:foldl(ToBin, [], Tokens),
+    lists:reverse(BinTokens).
 
 %%--------------------------------------------------------------------
 %% Function: filtered_bin_to_atom(Class) -> atom()
@@ -125,5 +143,13 @@ train_test() ->
 classes_test() ->
     R = classes("test/docfile/docfile_test"),
     ?assertEqual([indland,kultur,musik,udland], R).
+
+tokenize_test() ->
+    Line = <<"denne del er dokumentet,class1,class2\n"/utf8>>,
+    Expected = [<<"denne del er dokumentet"/utf8>>,
+		<<"class1"/utf8>>,
+		<<"class2\n"/utf8>>],
+    Tokens = tokenize(Line),
+    ?assertEqual(Expected, Tokens).
 
 -endif.
