@@ -10,7 +10,8 @@ Section:
 1) Configuring the classifier
 2) Stop word lists
 3) Setting up the mnesia datastore
-4) Dialyzer on Ubuntu
+4) Document file format
+5) Dialyzer on Ubuntu
 
 =============================
 1. Configuring the classifier
@@ -56,8 +57,33 @@ in erl_classifier.app. The following items most be setup:
    > ec_any_of:classify(<<"your text in danish"/utf8>>).
 
 
+=======================
+4. Document file format
+=======================
+
+Training a classifier can be done using the ec_coach API or the utility module ec_docfile which
+reads a file in a predefined format and make calls to the ec_coach API per document. This is
+an easy way to train the classifier with large amounts of document. The precondition for using
+ec_docfile to train the classifier is ofcause that the documents can be fit into the document
+file format.
+
+The document file format is a really simple text format containing one document and its 
+classes per line. The format is as follows:
+
+Document text,class-1,class-...,class-n 
+
+The main requirement for the format is:
+
+- No commas in the document text
+- No LF or CR in the document text
+- File must be encoded in UTF-8
+
+Note: Before calling ec_docfile:train you have to initialize the classifier with the classes
+in the file. The classes can be extracted from the file using ec_docfile:classes("filename").
+
+
 =====================
-4. Dialyzer on Ubuntu
+5. Dialyzer on Ubuntu
 =====================
 
 The dialyzer target in the Makefile will not work if you are on a package based Ubuntu installation,
