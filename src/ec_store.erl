@@ -19,7 +19,7 @@
 -export([term_freq/2]).
 -export([update_class_vocabulary/3, vocabulary_size/0, vocabulary_size/1]).
 %% Info API
--export([info_term_length/0]).
+-export([info_term_length/0, info_term_from_id/1]).
 
 -record(ids, {table, id}).
 
@@ -283,7 +283,6 @@ delete_tables() ->
 %% included regardless of whether a term with the length exixts.
 %%--------------------------------------------------------------------
 info_term_length() ->
-    %% -record(terms, {term, term_id}).
     T = fun() ->
 		LC = fun(Record, Acc) ->
 			     Term = [ X || <<X/utf8>> <= Record#terms.term],
@@ -306,6 +305,32 @@ info_term_length() ->
 		end, unused, lists:seq(MinLen, MaxLen)),
     ok.
 
+
+%%--------------------------------------------------------------------
+%% Function: info_term_from_id() -> Term string | unknown
+%% Description: Get term from id as a string or the atom unknown.
+%%--------------------------------------------------------------------
+info_term_from_id(TermId) ->
+    T = fun() ->
+		LC = fun(Record, Acc) ->
+			     if 
+				 TermId =:= Record#terms.term_id ->
+				     Term = [ X || <<X/utf8>> <= Record#terms.term],
+				     [Term, Acc];
+				 true ->
+				     Acc
+			     end
+		     end,
+		mnesia:foldl(LC, [], terms)
+	end,
+    {atomic, Terms} = mnesia:transaction(T),
+    Found = length(Terms),
+    if 
+	Found > 0 ->
+	    hd(Terms);
+	true ->
+	    unknown
+    end.
 
 
 %%====================================================================
