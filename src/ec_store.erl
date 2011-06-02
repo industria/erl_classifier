@@ -18,6 +18,9 @@
 -export([doc_freq/1]).
 -export([term_freq/2]).
 -export([update_class_vocabulary/3, vocabulary_size/0, vocabulary_size/1]).
+%% Info API
+-export([info_term_length/0]).
+
 -record(ids, {table, id}).
 
 -record(terms, {term, term_id}).
@@ -267,6 +270,42 @@ delete_tables() ->
     mnesia:delete_table(class_vocabulary),
     mnesia:delete_table(term_class_freq),
     mnesia:delete_table(stopwords).
+
+
+%%====================================================================
+%% Informational functions
+%%====================================================================
+%%--------------------------------------------------------------------
+%% Function: info_term_length() -> ok.
+%% Description: Write term length counts to stdout. 
+%% The list starts at the minimum term length and continues up to the 
+%% maximum term length. All lengths between minimum and maximum is
+%% included regardless of whether a term with the length exixts.
+%%--------------------------------------------------------------------
+info_term_length() ->
+    %% -record(terms, {term, term_id}).
+    T = fun() ->
+		LC = fun(Record, Acc) ->
+			     Term = [ X || <<X/utf8>> <= Record#terms.term],
+			     L = length(Term),
+			     dict:update_counter(L, 1, Acc)
+		     end,
+		mnesia:foldl(LC, dict:new(), terms)
+	end,
+    {atomic, LengthCounts} = mnesia:transaction(T),
+    Lens = dict:fetch_keys(LengthCounts),
+    MinLen = lists:min(Lens),
+    MaxLen = lists:max(Lens),
+    lists:foldl(fun(Elem, _A) ->
+			case dict:find(Elem, LengthCounts) of
+			    {ok, Value} ->
+				io:fwrite("~p ~p~n", [Elem, Value]);
+			     error ->
+				io:fwrite("~p 0~n", [Elem])
+			end
+		end, unused, lists:seq(MinLen, MaxLen)),
+    ok.
+
 
 
 %%====================================================================
