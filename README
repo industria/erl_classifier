@@ -26,6 +26,11 @@ in erl_classifier.app. The following items most be setup:
    List the classes of the classifier corresponding to two-class classifiers 
    the application will contain.
 
+3) Term length ranges: {min_term_length, integer} and {max_term_length, integer}
+   The minimum and maximum length of terms that should be processes. The range
+   filtering is done before the stemming, therefore its possible for terms
+   shorter that min_term_length to appear in the terms table.
+
 
 ==================
 2. Stop word lists
