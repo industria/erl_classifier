@@ -49,7 +49,7 @@ in erl_classifier.app. The following items most be setup:
    make console
    > ec_store:init_tables().
    > ec_store:stopword_update().
-   > ec_sport_demo:train().
+   > ec_docfile:train("test/documents/sport_demo").
    > ec_store:change_to_disc_copies().
  
 3) Classifying text (you can run the ec_any_of:classify as many times as you like)
