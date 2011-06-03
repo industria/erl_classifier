@@ -12,7 +12,12 @@
 -endif.
 
 %% API
--export([normalize/1, remove_punctuation/1, normalize_whitespace/1, to_lowercase/1]).
+-export([normalize/1, 
+	 remove_punctuation/1, 
+	 normalize_whitespace/1, 
+	 to_lowercase/1,
+	 term_length_in_range/3
+	]).
 
 %%====================================================================
 %% API
@@ -51,6 +56,16 @@ normalize_whitespace(Document) when is_binary(Document) ->
 %%--------------------------------------------------------------------
 to_lowercase(Document) when is_binary(Document) ->    
     << <<(string:to_lower(X))/utf8>> || <<X/utf8>> <= Document >>.
+
+%%--------------------------------------------------------------------
+%% Function: term_length_in_range(Term, Min, Max) -> boolean()
+%% Description: Check is the length of the given term is within the
+%% range given by minimum and maximum arguments.
+%%--------------------------------------------------------------------
+term_length_in_range(Term, Min, Max) ->
+    Length = length(unicode:characters_to_list(Term, utf8)),
+    ((Min =< Length) and (Length =< Max)).
+
 %%====================================================================
 %% Internal functions
 %%====================================================================
@@ -93,5 +108,12 @@ punctuation_test() ->
 
 to_lowercase_test() ->
     ?assertEqual(<<"\x{E6}bler"/utf8>>, to_lowercase(<<"\x{C6}bler"/utf8>>)).
+
+
+term_length_in_range_test() ->
+    T = <<"fishy"/utf8>>,
+    ?assert(term_length_in_range(T, 1, 5)),
+    ?assertNot(term_length_in_range(T, 1, 3)),
+    ?assertNot(term_length_in_range(T, 10, 25)).
 
 -endif.
