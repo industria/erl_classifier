@@ -19,7 +19,7 @@
 -export([term_freq/2]).
 -export([update_class_vocabulary/3, vocabulary_size/0, vocabulary_size/1]).
 %% Info API
--export([info_term_length/0, info_term_from_id/1]).
+-export([info_term_length/0, info_terms_of_length/1, info_term_from_id/1]).
 
 -record(ids, {table, id}).
 
@@ -304,6 +304,28 @@ info_term_length() ->
 			end
 		end, unused, lists:seq(MinLen, MaxLen)),
     ok.
+
+
+%%--------------------------------------------------------------------
+%% Function: info_term_of_length(Length) -> ok.
+%% Description: Write terms of the given length to stdout.
+%%--------------------------------------------------------------------
+info_terms_of_length(Length) ->
+    T = fun() ->
+		LC = fun(Record, Acc) ->
+			     Term = unicode:characters_to_list(Record#terms.term, utf8),
+			     L = length(Term),
+			     if
+				 Length =:= L ->
+				     [Term | Acc];
+				 true ->
+				     Acc
+			     end
+		     end,
+		mnesia:foldl(LC, [], terms)
+	end,
+    {atomic, Terms} = mnesia:transaction(T),
+    lists:foreach(fun(E) -> io:fwrite("~p~n", [E]) end, Terms).
 
 
 %%--------------------------------------------------------------------
