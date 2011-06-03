@@ -14,7 +14,8 @@
 %% API
 -export([normalize/1, 
 	 remove_punctuation/1, 
-	 normalize_whitespace/1, 
+	 normalize_whitespace/1,
+	 punctuation_to_space/1,
 	 to_lowercase/1,
 	 term_length_in_range/3
 	]).
