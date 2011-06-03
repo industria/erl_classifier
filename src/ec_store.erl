@@ -285,7 +285,7 @@ delete_tables() ->
 info_term_length() ->
     T = fun() ->
 		LC = fun(Record, Acc) ->
-			     Term = [ X || <<X/utf8>> <= Record#terms.term],
+			     Term = unicode:characters_to_list(Record#terms.term, utf8),
 			     L = length(Term),
 			     dict:update_counter(L, 1, Acc)
 		     end,
@@ -315,7 +315,7 @@ info_term_from_id(TermId) ->
 		LC = fun(Record, Acc) ->
 			     if 
 				 TermId =:= Record#terms.term_id ->
-				     Term = [ X || <<X/utf8>> <= Record#terms.term],
+				     Term = unicode:characters_to_list(Record#terms.term, utf8),
 				     [Term, Acc];
 				 true ->
 				     Acc
