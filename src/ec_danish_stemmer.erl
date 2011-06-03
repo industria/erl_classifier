@@ -23,7 +23,7 @@
 %% Description: Stem a word using the Danish Snowball stemmer.
 %%--------------------------------------------------------------------
 stem(Word) when is_binary(Word) ->
-    W = [ X || <<X/utf8>> <= Word],
+    W = unicode:characters_to_list(Word, utf8),
     Stem = stem(W),
     unicode:characters_to_binary(Stem, utf8, utf8);
 stem(Word) when length(Word) > 3 ->
