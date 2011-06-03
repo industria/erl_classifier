@@ -49,8 +49,11 @@ start_child() ->
 init([]) ->
     Classes = ec_configuration:classes(),
     Language = ec_configuration:language(),
+    MinTermLen = ec_configuration:min_term_length(),
+    MaxTermLen = ec_configuration:max_term_length(),
+    Args = [ Classes, Language, MinTermLen, MaxTermLen ],
     CoordServer = {ec_any_of, 
-		      {ec_any_of, start_link, [ Classes, Language ]},
+		      {ec_any_of, start_link, Args},
 		      temporary, 
 		      brutal_kill, 
 		      worker, 

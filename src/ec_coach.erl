@@ -19,7 +19,11 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {classtrainers, language}).
+-record(state, {classtrainers, 
+		language,
+	        min_term_length,
+		max_term_length
+	       }).
 
 %%====================================================================
 %% API
@@ -62,8 +66,11 @@ start_link(ClassTrainers) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init(ClassTrainers) ->
-    {ok, #state{classtrainers=ClassTrainers, 
-		language=ec_configuration:language()}}.
+    {ok, #state{classtrainers = ClassTrainers, 
+		language = ec_configuration:language(),
+		min_term_length = ec_configuration:min_term_length(),
+		max_term_length = ec_configuration:max_term_length()
+	       }}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -81,18 +88,24 @@ handle_call({train, Classes, Document}, _From, State) ->
     %% 2) Get the document tokenized
     Terms = ec_tokenizer:word_tokenize(NormalizedDocument),
 
-    %% 3) Remove stopwords from the list 
-    %% 4) Stem the words
+    %% 3) Remove term outside of the length interval
+    %% 4) Remove stopwords from the list 
+    %% 5) Stem the words
     Language = State#state.language,
-    Stemmed = [ ec_stemming:stem(Language, T) || T <- Terms, not ec_stopwords:is_stopword(Language, T)],
+    Min = State#state.min_term_length,
+    Max = State#state.max_term_length,
+    Stemmed = [ ec_stemming:stem(Language, T) 
+		|| T <- Terms, 
+		   ec_document_processing:term_length_in_range(T, Min, Max) 
+		   andalso (not ec_stopwords:is_stopword(Language, T))],
 
-    %% 5) Get the tokens converted into term ids
+    %% 6) Get the tokens converted into term ids
     {ok, TermIds} = ec_term_manager:update(Stemmed),
 
-    %% 6) Create a frequency distribution
+    %% 7) Create a frequency distribution
     TFD = ec_frequency_distribution:create(TermIds),
 
-    %% 7) Push the term lists to the class trainers
+    %% 8) Push the term lists to the class trainers
     lists:foreach(fun(Trainer) ->
 			  ec_class_trainer:update_with_document(Trainer, Classes, TFD)
 		  end, State#state.classtrainers),

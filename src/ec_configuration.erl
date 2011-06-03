@@ -9,7 +9,7 @@
 -module(ec_configuration).
 
 %% API
--export([classes/0, language/0]).
+-export([classes/0, language/0, min_term_length/0, max_term_length/0]).
 
 -define(APPLICATION, erl_classifier).
 
@@ -29,6 +29,14 @@ language() ->
     {ok, Language} = application:get_env(?APPLICATION, language),
     Language.
 
+min_term_length() ->
+    {ok, Length} = application:get_env(?APPLICATION, min_term_length),
+    Length.
+
+max_term_length() ->
+    {ok, Length} = application:get_env(?APPLICATION, max_term_length),
+    Length.
+    
 %%====================================================================
 %% Internal functions
 %%====================================================================

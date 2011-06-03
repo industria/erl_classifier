@@ -39,13 +39,19 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/2, classify/1, classify_detail/1, result/4]).
+-export([start_link/4, classify/1, classify_detail/1, result/4]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
 	 terminate/2, code_change/3]).
 
--record(state, {classes, language, pidmap, results = [], deferredreplyclient}).
+-record(state, {classes, 
+		language,
+		min_term_length,
+		max_term_length,
+		pidmap, 
+		results = [], 
+		deferredreplyclient}).
 
 %%====================================================================
 %% API
@@ -54,8 +60,8 @@
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
-start_link(Classes, Language) ->
-    gen_server:start_link(?MODULE, [ Classes, Language ], []).
+start_link(Classes, Language, MinTermLen, MaxTermLen) ->
+    gen_server:start_link(?MODULE, [ Classes, Language, MinTermLen, MaxTermLen ], []).
 
 
 %%--------------------------------------------------------------------
@@ -137,8 +143,13 @@ result(Pid, Class, Match, Complement) ->
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init([ Classes, Language ]) ->
-    {ok, #state{classes = Classes, language = Language}}.
+init([ Classes, Language, MinTermLen, MaxTermLen ]) ->
+    {ok, #state{classes = Classes, 
+		language = Language,
+		min_term_length = MinTermLen,
+		max_term_length = MaxTermLen
+	       }
+    }.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -156,15 +167,22 @@ handle_call({classify, Document}, From, State) ->
     %% 2) Get the document tokenized
     Terms = ec_tokenizer:word_tokenize(NormalizedDocument),
 
-    %% 3) Remove stopwords from the list 
-    %% 4) Stem the words
+    %% 3) Remove term outside of the length interval
+    %%    term_length_in_range(Term, Min, Max)
+    %% 4) Remove stopwords from the list 
+    %% 5) Stem the words
     Language = State#state.language,
-    Stemmed = [ ec_stemming:stem(Language, T) || T <- Terms, not ec_stopwords:is_stopword(Language, T)],
+    Min = State#state.min_term_length,
+    Max = State#state.max_term_length,
+    Stemmed = [ ec_stemming:stem(Language, T) 
+		|| T <- Terms, 
+		   ec_document_processing:term_length_in_range(T, Min, Max) 
+		   andalso (not ec_stopwords:is_stopword(Language, T))],
 
-    %% 5) Get the tokens converted into term ids
+    %% 6) Get the tokens converted into term ids
     TermIds = terms_to_ids(Stemmed),
 
-    %% 6) Create a frequency distribution
+    %% 7) Create a frequency distribution
     TFD = ec_frequency_distribution:create(TermIds),
 
     %% Generate the N two-class classifiers
@@ -286,4 +304,3 @@ read_file_and_classify(Filename, ClassificationFunction) ->
 	{error, Reason} ->
 	    {error, Reason}
     end.
-

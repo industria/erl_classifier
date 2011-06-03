@@ -32,6 +32,10 @@
   	   %% Language of the classifier
 	   %% Valid values are: danish or swedish
   	   {language, danish},
+	   %% Minimum term length to include for processing
+	   {min_term_length, 1},
+	   %% Maximum term length to include for processing
+	   {max_term_length, 25},
 	   %% Classes making up the classifier
 	   %% List the class atoms in the list
   	   {classes, [f1, cykling, fodbold]}
