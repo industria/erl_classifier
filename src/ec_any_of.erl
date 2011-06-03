@@ -168,7 +168,6 @@ handle_call({classify, Document}, From, State) ->
     Terms = ec_tokenizer:word_tokenize(NormalizedDocument),
 
     %% 3) Remove term outside of the length interval
-    %%    term_length_in_range(Term, Min, Max)
     %% 4) Remove stopwords from the list 
     %% 5) Stem the words
     Language = State#state.language,
