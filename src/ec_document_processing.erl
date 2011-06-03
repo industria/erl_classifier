@@ -31,9 +31,11 @@
 normalize(Document) when is_binary(Document) ->
     << 
        <<(
-	   string:to_lower(normalize_whitespace_character(X)) 
+	   string:to_lower(
+	     normalize_char(X)
+	    ) 
 	 )/utf8>> 
-       || <<X/utf8>> <= Document, not punctuation(<<X>>) 
+       || <<X/utf8>> <= Document 
     >>.
 %%--------------------------------------------------------------------
 %% Function: remove_punctuation(Document) -> Document
@@ -42,6 +44,19 @@ normalize(Document) when is_binary(Document) ->
 %%--------------------------------------------------------------------
 remove_punctuation(Document) when is_binary(Document) ->
     << <<X>> || <<X>> <= Document, not punctuation(<<X>>) >>.
+
+%%--------------------------------------------------------------------
+%% Function: punctuation_to_space(Document) -> Document
+%% Description: Replace punctuation with space in Document.
+%% Punctuation is defined as: !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
+%%--------------------------------------------------------------------
+punctuation_to_space(Document) when is_binary(Document) ->
+    << 
+       <<(
+	   normalize_punctuation_character(X)
+	 )/utf8>> 
+       || <<X/utf8>> <= Document 
+    >>.
 
 %%--------------------------------------------------------------------
 %% Function: normalize_whitespace(Document) -> Document
@@ -76,9 +91,28 @@ punctuation(X) when is_binary(X)->
      (<<16#5B>> =< X andalso X =< <<16#60>>) orelse
      (<<16#7B>> =< X andalso X =< <<16#7E>>)).
 
+normalize_punctuation_character(X) when ((16#21 =< X andalso X =< 16#2F) orelse
+					 (16#3A =< X andalso X =< 16#40) orelse
+					 (16#5B =< X andalso X =< 16#60) orelse
+					 (16#7B =< X andalso X =< 16#7E)) ->
+    16#20;
+normalize_punctuation_character(X) ->
+    X.
+
 normalize_whitespace_character(X) when (16#09 =< X andalso X =< 16#0D) ->
     16#20;
 normalize_whitespace_character(X) ->
+    X.
+
+
+normalize_char(X) when ((16#21 =< X andalso X =< 16#2F) orelse
+					 (16#3A =< X andalso X =< 16#40) orelse
+					 (16#5B =< X andalso X =< 16#60) orelse
+					 (16#7B =< X andalso X =< 16#7E)) ->
+    16#20;
+normalize_char(X) when (16#09 =< X andalso X =< 16#0D) ->
+    16#20;
+normalize_char(X) ->
     X.
 
 %%====================================================================
@@ -88,7 +122,7 @@ normalize_whitespace_character(X) ->
 
 normalize_test() ->
     Doc = <<"Remove, the.\tpunctuation TOLOWER \x{C6}bler"/utf8>>,
-    Expected = <<"remove the punctuation tolower \x{E6}bler"/utf8>>,
+    Expected = <<"remove  the  punctuation tolower \x{E6}bler"/utf8>>,
     ?assertEqual(Expected, normalize(Doc)).
 
 
@@ -96,6 +130,11 @@ remove_punctuation_test() ->
     Doc = <<"Remove, the. punctuation"/utf8>>,
     Expected = <<"Remove the punctuation"/utf8>>,
     ?assertEqual(Expected, remove_punctuation(Doc)).
+
+punctuation_to_space_test() ->
+    Doc = <<"Remove, the. punctuation"/utf8>>,
+    Expected = <<"Remove  the  punctuation"/utf8>>,
+    ?assertEqual(Expected, punctuation_to_space(Doc)).
 
 normalize_whitespace_test() ->
     Document = <<"fish \tcat\n"/utf8>>,
