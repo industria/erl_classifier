@@ -96,7 +96,7 @@ line_processor(Line) ->
 %% if you are running on R14, so this is to support R13
 %%--------------------------------------------------------------------
 tokenize(Line) ->
-    LineList = [ X || <<X/utf8>> <= Line],
+    LineList = unicode:characters_to_list(Line, utf8),
     Tokens = string:tokens(LineList, ","),
     ToBin = fun(String, BinTokensAcc) ->
 		    B = unicode:characters_to_binary(String, utf8, utf8),
