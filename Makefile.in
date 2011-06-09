@@ -2,7 +2,7 @@ ERL = @ERL@
 ERLC = @ERLC@
 EBIN = ebin
 MNESIA = datastore
-NODENAME = ec
+NODENAME = @NODENAME@
 
 dummy := $(shell test -d $(EBIN) || mkdir -p $(EBIN))
 dummy := $(shell test -d $(MNESIA) || mkdir -p $(MNESIA))

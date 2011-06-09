@@ -20,6 +20,12 @@ AC_ERLANG_CHECK_LIB([mnesia],
 
 AC_CONFIG_SRCDIR(src/ec_classifier.erl)
 
+AC_ARG_VAR([NODENAME], [Name of the Erlang node started (default: ec)])
+AS_IF([test -z "$NODENAME"],
+	    [AC_SUBST([NODENAME], [ec])]
+)
+
+
 AC_CONFIG_FILES([
 	Makefile
 	src/erl_classifier.app

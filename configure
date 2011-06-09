@@ -563,6 +563,7 @@ PACKAGE_URL=''
 ac_unique_file="src/ec_classifier.erl"
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
+NODENAME
 ERLANG_LIB_VER_mnesia
 ERLANG_LIB_DIR_mnesia
 ERLANG_LIB_VER_stdlib
@@ -618,7 +619,8 @@ host_alias
 target_alias
 ERLC
 ERLCFLAGS
-ERL'
+ERL
+NODENAME'
 
 
 # Initialize some variables set by options.
@@ -1230,6 +1232,7 @@ Some influential environment variables:
   ERLC        Erlang/OTP compiler command [autodetected]
   ERLCFLAGS   Erlang/OTP compiler flags [none]
   ERL         Erlang/OTP interpreter command [autodetected]
+  NODENAME    Name of the Erlang node started (default: ec)
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -2147,6 +2150,14 @@ else
 fi
 
 
+
+
+
+if test -z "$NODENAME"; then :
+  NODENAME=ec
+
+
+fi
 
 
 ac_config_files="$ac_config_files Makefile src/erl_classifier.app"
