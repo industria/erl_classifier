@@ -1,5 +1,5 @@
-ERL = erl
-ERLC = erlc
+ERL = @ERL@
+ERLC = @ERLC@
 EBIN = ebin
 MNESIA = datastore
 NODENAME = ec

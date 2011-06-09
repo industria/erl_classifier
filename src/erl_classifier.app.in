@@ -1,6 +1,6 @@
-{application, erl_classifier,
+{application, @PACKAGE_NAME@,
  [{description, "Naive Bayes classifier"},
-  {vsn, "0.1.0"},
+  {vsn, "@PACKAGE_VERSION@"},
   {modules, [	
   	    	ec_any_of,
 		ec_any_of_sup,
@@ -38,11 +38,11 @@
 	   {max_term_length, 25},
 	   %% Classes making up the classifier
 	   %% List the class atoms in the list
-  	   %%{classes, [f1, cykling, fodbold]}
-	   {classes, [atletik,biler,boeger,cykling,digitalt,erhverv,f1,film,
-	   	      fodbold,forbrug,haandbold,indland,klima,kultur,mad,musik,
- 	   	      penge,politik,rejser,sport,sundhed,tennis,uddannelse,udland,
- 	   	      videnskab]}
+  	   {classes, [f1, cykling, fodbold]}
+	   %%{classes, [atletik,biler,boeger,cykling,digitalt,erhverv,f1,film,
+	   %%	      fodbold,forbrug,haandbold,indland,klima,kultur,mad,musik,
+ 	   %%	      penge,politik,rejser,sport,sundhed,tennis,uddannelse,udland,
+ 	   %%	      videnskab]}
 	] },
   %% mod is : { module, one-start argument}
   {mod, {erl_classifier_app, [] }}

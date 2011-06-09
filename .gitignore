@@ -9,3 +9,9 @@ ebin/*
 datastore/*
 #plt
 *.plt
+# Autoconf
+autom4te.cache/*
+config.log
+config.status
+Makefile
+src/erl_classifier.app
