@@ -16,13 +16,16 @@ compiletest: appfile
 appfile:
 	@cp src/erl_classifier.app $(EBIN)
 
+erl_classifier.boot:
+	@echo "Create boot script..."
+	@erl -noshell -pa $(EBIN) -eval 'systools:make_script("erl_classifier", [local])' -s init stop
+
 eunit: compiletest
 	@$(ERL) -noshell -pa $(EBIN) -mnesia dir '"$(MNESIA)"' -sname $(NODENAME) -eval 'mnesia:start(), eunit:test("$(EBIN)", [verbose])' -s init stop
 
 
 console: compile
-	@$(ERL) -pa $(EBIN) -mnesia dir '"$(MNESIA)"' -eval 'mnesia:start(), application:start(erl_classifier)' -sname $(NODENAME)
-
+	@$(ERL) -boot erl_classifier -config sys -sname $(NODENAME)
 
 ec.plt:
 	dialyzer --build_plt -r . --output_plt ec.plt \
@@ -33,3 +36,4 @@ dialyzer: ec.plt
 
 clean:
 	@rm -Rf $(EBIN)/*.beam $(EBIN)/*.app
+	@rm erl_classifier.boot erl_classifier.script
