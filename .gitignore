@@ -15,4 +15,6 @@ config.log
 config.status
 Makefile
 erl_classifier.rel
+erl_classifier.boot
+erl_classifier.script
 src/erl_classifier.app
