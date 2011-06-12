@@ -3,6 +3,6 @@
   {kernel, "@ERLANG_LIB_VER_kernel@"},
   {sasl, "@ERLANG_LIB_VER_sasl@"},
   {mnesia, "@ERLANG_LIB_VER_mnesia@"},
-  {"@PACKAGE_NAME@", "@PACKAGE_VERSION@"}
+  {@PACKAGE_NAME@, "@PACKAGE_VERSION@"}
  ]
 }.
