@@ -9,14 +9,10 @@ AC_ERLANG_NEED_ERL
 AC_LANG(Erlang)
 
 AC_ERLANG_SUBST_ERTS_VER
-AC_ERLANG_CHECK_LIB([stdlib], 
-	            [echo "stdlib version \"$ERLANG_LIB_VER_stdlib\""
-             	     echo "is installed in \"$ERLANG_LIB_DIR_stdlib\""],
-            	    [AC_MSG_ERROR([stdlib was not found!])])
-AC_ERLANG_CHECK_LIB([mnesia], 
-	            [echo "mnesia version \"$ERLANG_LIB_VER_mnesia\""
-             	     echo "is installed in \"$ERLANG_LIB_DIR_mnesia\""],
-            	    [AC_MSG_ERROR([mnesia was not found!])])
+AC_ERLANG_CHECK_LIB([stdlib], , [AC_MSG_ERROR([stdlib was not found!])])
+AC_ERLANG_CHECK_LIB([kernel], , [AC_MSG_ERROR([kernel was not found!])])
+AC_ERLANG_CHECK_LIB([sasl], , [AC_MSG_ERROR([sasl was not found!])])
+AC_ERLANG_CHECK_LIB([mnesia], , [AC_MSG_ERROR([mnesia was not found!])])
 
 AC_CONFIG_SRCDIR(src/ec_classifier.erl)
 
@@ -28,6 +24,7 @@ AS_IF([test -z "$NODENAME"],
 
 AC_CONFIG_FILES([
 	Makefile
+	erl_classifier.rel
 	src/erl_classifier.app
 ])
 

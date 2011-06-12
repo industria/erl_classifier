@@ -1,0 +1,8 @@
+{release, {"NBC @PACKAGE_NAME@", "@PACKAGE_VERSION@"}, {erts, "@ERLANG_ERTS_VER@"},
+ [{stdlib, "@ERLANG_LIB_VER_stdlib@"},
+  {kernel, "@ERLANG_LIB_VER_kernel@"},
+  {sasl, "@ERLANG_LIB_VER_sasl@"},
+  {mnesia, "@ERLANG_LIB_VER_mnesia@"},
+  {"@PACKAGE_NAME@", "@PACKAGE_VERSION@"}
+ ]
+}.
