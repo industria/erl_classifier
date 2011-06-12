@@ -563,6 +563,7 @@ PACKAGE_URL=''
 ac_unique_file="src/ec_classifier.erl"
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
+MNESIA_DIR
 NODENAME
 ERLANG_LIB_VER_mnesia
 ERLANG_LIB_DIR_mnesia
@@ -2311,8 +2312,10 @@ if test -z "$NODENAME"; then :
 
 fi
 
+MNESIA_DIR=datastore
 
-ac_config_files="$ac_config_files Makefile erl_classifier.rel src/erl_classifier.app"
+
+ac_config_files="$ac_config_files Makefile sys.config erl_classifier.rel src/erl_classifier.app"
 
 
 cat >confcache <<\_ACEOF
@@ -3021,6 +3024,7 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+    "sys.config") CONFIG_FILES="$CONFIG_FILES sys.config" ;;
     "erl_classifier.rel") CONFIG_FILES="$CONFIG_FILES erl_classifier.rel" ;;
     "src/erl_classifier.app") CONFIG_FILES="$CONFIG_FILES src/erl_classifier.app" ;;
 

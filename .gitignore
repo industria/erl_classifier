@@ -14,6 +14,7 @@ autom4te.cache/*
 config.log
 config.status
 Makefile
+sys.config
 erl_classifier.rel
 erl_classifier.boot
 erl_classifier.script

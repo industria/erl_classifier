@@ -21,9 +21,11 @@ AS_IF([test -z "$NODENAME"],
 	    [AC_SUBST([NODENAME], [ec])]
 )
 
+AC_SUBST([MNESIA_DIR], [datastore])
 
 AC_CONFIG_FILES([
 	Makefile
+	sys.config
 	erl_classifier.rel
 	src/erl_classifier.app
 ])

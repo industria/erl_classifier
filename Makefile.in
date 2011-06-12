@@ -1,7 +1,7 @@
 ERL = @ERL@
 ERLC = @ERLC@
 EBIN = ebin
-MNESIA = datastore
+MNESIA = @MNESIA_DIR@
 NODENAME = @NODENAME@
 
 dummy := $(shell test -d $(EBIN) || mkdir -p $(EBIN))
@@ -20,11 +20,11 @@ erl_classifier.boot:
 	@echo "Create boot script..."
 	@erl -noshell -pa $(EBIN) -eval 'systools:make_script("erl_classifier", [local])' -s init stop
 
-eunit: compiletest
+eunit: compiletest erl_classifier.boot
 	@$(ERL) -boot erl_classifier -config sys -noshell -sname $(NODENAME) -eval 'eunit:test("$(EBIN)", [verbose])' -s init stop
 
 
-console: compile
+console: compile erl_classifier.boot
 	@$(ERL) -boot erl_classifier -config sys -sname $(NODENAME)
 
 ec.plt:
@@ -36,4 +36,4 @@ dialyzer: ec.plt
 
 clean:
 	@rm -Rf $(EBIN)/*.beam $(EBIN)/*.app
-	@rm erl_classifier.boot erl_classifier.script
+

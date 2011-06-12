@@ -7,6 +7,6 @@
  {mnesia,
   [
    %% mnesia directory
-   {dir,"datastore" }
+   {dir, "@MNESIA_DIR@" }
   ]}
 ].
