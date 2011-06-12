@@ -21,7 +21,7 @@ erl_classifier.boot:
 	@erl -noshell -pa $(EBIN) -eval 'systools:make_script("erl_classifier", [local])' -s init stop
 
 eunit: compiletest
-	@$(ERL) -noshell -pa $(EBIN) -mnesia dir '"$(MNESIA)"' -sname $(NODENAME) -eval 'mnesia:start(), eunit:test("$(EBIN)", [verbose])' -s init stop
+	@$(ERL) -boot erl_classifier -config sys -noshell -sname $(NODENAME) -eval 'eunit:test("$(EBIN)", [verbose])' -s init stop
 
 
 console: compile
